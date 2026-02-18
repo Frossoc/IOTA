@@ -1,0 +1,10 @@
+[package]
+name = "por_contract"
+version = "0.0.1"
+published-at = "0x41a73c69514ce68184909838c89c5155cc5835a5449756919f931e9829ffbae6"
+
+[addresses]
+por_contract = "0x41a73c69514ce68184909838c89c5155cc5835a5449756919f931e9829ffbae6"
+
+[dependencies]
+Iota = { git = "https://github.com/iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework", rev = "main" }

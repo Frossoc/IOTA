@@ -37,8 +37,13 @@ export type ProofResponse = {
     total_units: number;
   };
   txId?: string;
+  tx_digest?: string;
+  object_id?: string | null;
+  anchor_error?: string;
   explorer?: {
-    tx: string;
+    tx?: string;
+    object?: string;
+    package?: string;
   };
   token?: {
     supply: number;
@@ -64,6 +69,17 @@ export type VerifyResponse = {
     package: string | null;
   };
   error?: string;
+};
+
+export type VerifyRequest = {
+  canonical?: unknown;
+  canonical_string?: string;
+  expected_event_hash?: string;
+  uri?: string;
+  txId?: string;
+  tx_digest?: string;
+  objectId?: string;
+  object_id?: string;
 };
 
 export type RawSpreadsheetRow = Record<string, unknown>;

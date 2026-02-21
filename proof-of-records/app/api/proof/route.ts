@@ -139,6 +139,14 @@ function computeTotalUnits(
   }, 0);
 }
 
+function hexToBytes(hexValue: string): number[] {
+  const normalized = hexValue.trim().toLowerCase().replace(/^0x/, "");
+  if (!/^[0-9a-f]+$/.test(normalized) || normalized.length % 2 !== 0) {
+    throw new Error("Invalid event hash hex");
+  }
+  return normalized.match(/.{2}/g)?.map((part) => Number.parseInt(part, 16)) ?? [];
+}
+
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
@@ -231,7 +239,12 @@ export async function POST(req: Request) {
     const stored = await storeBundle(canonicalObj);
     let uri = stored.uri;
     let txId: string | undefined;
+    let txDigest: string | undefined;
+    let objectId: string | null | undefined;
     let explorerTx: string | undefined;
+    let explorerObject: string | undefined;
+    let explorerPackage: string | undefined;
+    let anchorError: string | undefined;
     let token:
       | {
           supply: number;
@@ -284,21 +297,47 @@ export async function POST(req: Request) {
         (process.env.IOTA_PRIVATE_KEY && process.env.IOTA_PRIVATE_KEY.trim().length > 0) ||
           (process.env.IOTA_MNEMONIC && process.env.IOTA_MNEMONIC.trim().length > 0)
       );
+    const anchorOnchain = process.env.IOTA_ANCHOR_ONCHAIN === "true";
+    const packageId = process.env.IOTA_PACKAGE_ID?.trim();
+    const iotaNetwork = process.env.IOTA_NETWORK?.trim() || "testnet";
+
+    if (anchorOnchain) {
+      const onchainIssuer =
+        process.env.IOTA_ISSUER_ADDRESS?.trim() ||
+        process.env.IOTA_SENDER_ADDRESS?.trim() ||
+        process.env.IOTA_ACTIVE_ADDRESS?.trim();
+
+      if (!hasIotaEnv || !packageId || !onchainIssuer) {
+        warnings.push(
+          "On-chain anchoring skipped: missing required IOTA env vars (IOTA_RPC_URL, signer key, IOTA_PACKAGE_ID, or issuer address)."
+        );
+      } else {
+        try {
+          const onchainTimestamp = Math.floor(Date.now() / 1000);
+          const anchored = await registerProofOnChain({
+            event_hash_bytes: hexToBytes(event_hash),
+            uri_bytes: Array.from(NodeBuffer.from(uri, "utf8")),
+            issuer: onchainIssuer,
+            timestamp: onchainTimestamp,
+          });
+          txDigest = anchored.txDigest;
+          objectId = anchored.objectId;
+          txId = anchored.txId;
+          explorerTx = anchored.explorer.tx;
+          explorerObject = anchored.explorer.object ?? undefined;
+          explorerPackage =
+            iotaNetwork === "mainnet"
+              ? `https://explorer.iota.org/object/${packageId}`
+              : `https://explorer.iota.org/?network=${iotaNetwork}/object/${packageId}`;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown anchor error";
+          anchorError = message;
+          warnings.push(`On-chain anchoring failed: ${message}`);
+        }
+      }
+    }
 
     if (hasIotaEnv) {
-      try {
-        const anchored = await registerProofOnChain({
-          event_hash,
-          uri,
-          schema_version: "v1",
-          adapter: "records",
-        });
-        txId = anchored.txId;
-        explorerTx = anchored.explorerTx;
-      } catch {
-        // Keep response working even when on-chain anchor fails.
-      }
-
       try {
         const shouldMint = process.env.IOTA_ENABLE_PROOF_UNITS_MINT === "1";
         if (shouldMint && totalUnits > 0) {
@@ -332,7 +371,18 @@ export async function POST(req: Request) {
         total_units: totalUnits,
       },
       ...(txId ? { txId } : {}),
-      ...(explorerTx ? { explorer: { tx: explorerTx } } : {}),
+      ...(txDigest ? { tx_digest: txDigest } : {}),
+      ...(objectId !== undefined ? { object_id: objectId } : {}),
+      ...(anchorError ? { anchor_error: anchorError } : {}),
+      ...(explorerTx || explorerObject || explorerPackage
+        ? {
+            explorer: {
+              ...(explorerTx ? { tx: explorerTx } : {}),
+              ...(explorerObject ? { object: explorerObject } : {}),
+              ...(explorerPackage ? { package: explorerPackage } : {}),
+            },
+          }
+        : {}),
       ...(token ? { token } : {}),
       ...(evidence ? { evidence } : {}),
     };

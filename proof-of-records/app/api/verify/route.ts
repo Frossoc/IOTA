@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
 import { sha256Hex } from "@/app/lib/proof/hash";
 import { stableStringify } from "@/app/lib/proof/canonicalize";
+import type { VerifyRequest } from "@/app/types/records";
+import { fetchProofByObjectId } from "@/app/lib/iota/client";
 import {
   getExplorerObjectUrl,
   getExplorerTxUrl,
-  getOnChainEventHashByObjectId,
   getOnChainEventHashByTxId,
 } from "@/app/lib/iota/move";
 
 export const runtime = "nodejs";
-
-type VerifyRequest = {
-  canonical?: unknown;
-  canonical_string?: string;
-  expected_event_hash?: string;
-  uri?: string;
-  txId?: string;
-  objectId?: string;
-};
 
 function normalizeHex(value?: string): string | undefined {
   if (!value) {
@@ -27,6 +19,8 @@ function normalizeHex(value?: string): string | undefined {
 }
 
 async function verifyPayload(payload: VerifyRequest) {
+  const objectId = payload.object_id ?? payload.objectId;
+  const txDigest = payload.tx_digest ?? payload.txId;
   const expectedHash = normalizeHex(payload.expected_event_hash);
   const canonicalString =
     typeof payload.canonical_string === "string" && payload.canonical_string.length > 0
@@ -47,35 +41,46 @@ async function verifyPayload(payload: VerifyRequest) {
   let matchOnchain: boolean | null = null;
   let explorerTx: string | null = null;
   let explorerObject: string | null = null;
+  const onchainEnabled =
+    process.env.IOTA_ANCHOR_ONCHAIN === "true" &&
+    Boolean(process.env.IOTA_PACKAGE_ID && process.env.IOTA_PACKAGE_ID.trim().length > 0) &&
+    Boolean(process.env.IOTA_NETWORK && process.env.IOTA_NETWORK.trim().length > 0);
 
-  if (typeof payload.txId === "string" && payload.txId.trim().length > 0) {
+  if (
+    onchainEnabled &&
+    typeof objectId === "string" &&
+    objectId.trim().length > 0
+  ) {
     try {
-      explorerTx = getExplorerTxUrl(payload.txId);
+      explorerObject = getExplorerObjectUrl(objectId);
     } catch {
-      explorerTx = null;
+      explorerObject = null;
     }
     try {
-      onchainEventHash = await getOnChainEventHashByTxId(payload.txId);
+      const proofObj = await fetchProofByObjectId(objectId);
+      onchainEventHash = proofObj?.event_hash_hex ?? null;
       if (onchainEventHash) {
         matchOnchain = normalizeHex(onchainEventHash) === computedHash;
       }
     } catch {
+      onchainEventHash = null;
       matchOnchain = null;
     }
   }
 
   if (
+    onchainEnabled &&
     onchainEventHash === null &&
-    typeof payload.objectId === "string" &&
-    payload.objectId.trim().length > 0
+    typeof txDigest === "string" &&
+    txDigest.trim().length > 0
   ) {
     try {
-      explorerObject = getExplorerObjectUrl(payload.objectId);
+      explorerTx = getExplorerTxUrl(txDigest);
     } catch {
-      explorerObject = null;
+      explorerTx = null;
     }
     try {
-      onchainEventHash = await getOnChainEventHashByObjectId(payload.objectId);
+      onchainEventHash = await getOnChainEventHashByTxId(txDigest);
       if (onchainEventHash) {
         matchOnchain = normalizeHex(onchainEventHash) === computedHash;
       }
@@ -120,7 +125,9 @@ export async function GET(req: Request) {
     expected_event_hash: searchParams.get("expected_event_hash") ?? undefined,
     uri: searchParams.get("uri") ?? undefined,
     txId: searchParams.get("txId") ?? undefined,
+    tx_digest: searchParams.get("tx_digest") ?? undefined,
     objectId: searchParams.get("objectId") ?? undefined,
+    object_id: searchParams.get("object_id") ?? undefined,
   });
 
   return NextResponse.json(result.body, { status: result.status });

@@ -1,14 +1,38 @@
 import { createHash } from "node:crypto";
-import { getIotaClient, getSigner, requireIotaConfig, type IotaNetwork } from "@/app/lib/iota/client";
+import {
+  ensureHexFromBytes,
+  getActiveAddress,
+  readObjectById,
+  requireIotaConfig,
+  runIotaClientJson,
+  signAndExecuteRegisterProof,
+  utf8BytesToString,
+  type IotaNetwork,
+} from "@/app/lib/iota/client";
 
-export type RegisterProofInput = {
+type RegisterProofBytesInput = {
+  event_hash_bytes: number[];
+  uri_bytes: number[];
+  issuer: string;
+  timestamp: number;
+};
+
+type RegisterProofLegacyInput = {
   event_hash: string;
   uri: string;
   schema_version: string;
   adapter: string;
 };
 
+export type RegisterProofInput = RegisterProofBytesInput | RegisterProofLegacyInput;
+
 export type RegisterProofResult = {
+  txDigest: string;
+  objectId: string | null;
+  explorer: {
+    tx: string;
+    object: string | null;
+  };
   txId: string;
   explorerTx: string;
 };
@@ -24,6 +48,10 @@ export type MintProofUnitsResult = {
   explorerTx: string;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function getExplorerBase(network: IotaNetwork): string {
   if (network === "mainnet") {
     return "https://explorer.iota.org";
@@ -38,40 +66,105 @@ export function buildExplorerTx(network: IotaNetwork, txId: string): string {
   return `${getExplorerBase(network)}/transaction/${txId}`;
 }
 
-function derivePlaceholderTxId(input: RegisterProofInput): string {
-  const digest = createHash("sha256")
-    .update(JSON.stringify(input), "utf8")
-    .digest("hex");
-  return digest.slice(0, 64);
+export function buildExplorerObject(network: IotaNetwork, objectId: string): string {
+  return `${getExplorerBase(network)}/object/${objectId}`;
 }
 
-function isIotaEnvConfigured(): boolean {
-  const hasRpc = Boolean(process.env.IOTA_RPC_URL && process.env.IOTA_RPC_URL.trim().length > 0);
-  const hasKey = Boolean(
-    (process.env.IOTA_PRIVATE_KEY && process.env.IOTA_PRIVATE_KEY.trim().length > 0) ||
-      (process.env.IOTA_MNEMONIC && process.env.IOTA_MNEMONIC.trim().length > 0)
-  );
-  return hasRpc && hasKey;
+function parseHexToBytes(hexValue: string): number[] {
+  const normalized = hexValue.trim().toLowerCase().replace(/^0x/, "");
+  if (!/^[0-9a-f]+$/.test(normalized) || normalized.length % 2 !== 0) {
+    throw new Error("Invalid event_hash hex string");
+  }
+  return normalized.match(/.{2}/g)?.map((part) => Number.parseInt(part, 16)) ?? [];
 }
 
-export async function registerProofOnChain(
-  input: RegisterProofInput
-): Promise<RegisterProofResult> {
-  if (!isIotaEnvConfigured()) {
-    throw new Error("IOTA integration disabled: missing IOTA_RPC_URL and/or signer credentials");
+function parseEventHashFromMoveContent(content: unknown): string | null {
+  if (!isRecord(content)) {
+    return null;
   }
 
-  const config = requireIotaConfig();
-  getSigner();
+  const fields = isRecord(content.fields) ? content.fields : content;
+  const eventHash = fields.event_hash;
+  if (typeof eventHash === "string") {
+    return eventHash.toLowerCase().replace(/^0x/, "");
+  }
+  if (Array.isArray(eventHash)) {
+    const values = eventHash.filter((item): item is number => typeof item === "number");
+    if (values.length === eventHash.length) {
+      return values.map((item) => item.toString(16).padStart(2, "0")).join("");
+    }
+  }
+  return null;
+}
 
-  // Placeholder integration shape.
-  // Replace this section with actual IOTA SDK transaction-building + execution.
-  void getIotaClient();
-  const txId = derivePlaceholderTxId(input);
+function parseCreatedProofObjectId(txBlock: unknown, packageId: string): string | null {
+  if (!isRecord(txBlock)) {
+    return null;
+  }
+
+  const changes = txBlock.objectChanges;
+  if (!Array.isArray(changes)) {
+    return null;
+  }
+
+  const targetPrefix = `${packageId.toLowerCase()}::`;
+  for (const change of changes) {
+    if (!isRecord(change)) {
+      continue;
+    }
+    const objectType = typeof change.objectType === "string" ? change.objectType.toLowerCase() : "";
+    if (!objectType.startsWith(targetPrefix) || !objectType.endsWith("::proof::Proof".toLowerCase())) {
+      continue;
+    }
+    if (typeof change.objectId === "string") {
+      return change.objectId;
+    }
+    if (typeof change.ObjectID === "string") {
+      return change.ObjectID;
+    }
+  }
+  return null;
+}
+
+async function normalizeRegisterInput(input: RegisterProofInput): Promise<RegisterProofBytesInput> {
+  if ("event_hash_bytes" in input) {
+    return input;
+  }
+
+  const issuer = await getActiveAddress();
+  return {
+    event_hash_bytes: parseHexToBytes(input.event_hash),
+    uri_bytes: Array.from(Buffer.from(input.uri, "utf8")),
+    issuer,
+    timestamp: Math.floor(Date.now() / 1000),
+  };
+}
+
+export async function registerProofOnChain(input: RegisterProofInput): Promise<RegisterProofResult> {
+  const config = requireIotaConfig();
+  const normalized = await normalizeRegisterInput(input);
+  const eventHashHex = ensureHexFromBytes(normalized.event_hash_bytes);
+  const uri = utf8BytesToString(normalized.uri_bytes);
+
+  const executed = await signAndExecuteRegisterProof({
+    eventHashHex,
+    uri,
+    issuer: normalized.issuer,
+    timestamp: normalized.timestamp,
+  });
+
+  const txUrl = buildExplorerTx(config.network, executed.txDigest);
+  const objectUrl = executed.objectId ? buildExplorerObject(config.network, executed.objectId) : null;
 
   return {
-    txId,
-    explorerTx: buildExplorerTx(config.network, txId),
+    txDigest: executed.txDigest,
+    objectId: executed.objectId,
+    explorer: {
+      tx: txUrl,
+      object: objectUrl,
+    },
+    txId: executed.txDigest,
+    explorerTx: txUrl,
   };
 }
 
@@ -82,57 +175,34 @@ export function getExplorerTxUrl(txId: string): string {
 
 export function getExplorerObjectUrl(objectId: string): string {
   const config = requireIotaConfig();
-  const base = (() => {
-    if (config.network === "mainnet") {
-      return "https://explorer.iota.org";
-    }
-    if (config.network === "devnet") {
-      return "https://explorer.iota.org/?network=devnet";
-    }
-    return "https://explorer.iota.org/?network=testnet";
-  })();
-  return `${base}/object/${objectId}`;
+  return buildExplorerObject(config.network, objectId);
 }
 
 export async function getOnChainEventHashByTxId(txId: string): Promise<string | null> {
-  if (!isIotaEnvConfigured()) {
-    throw new Error("IOTA integration disabled: missing IOTA_RPC_URL and/or signer credentials");
-  }
-
-  const client = getIotaClient();
-
-  // Placeholder query shape. Replace with concrete transaction/event fetch parsing when SDK is wired.
-  const response = await client.request<unknown>("iota_getTransactionBlock", [txId]);
-  if (!response) {
+  const config = requireIotaConfig();
+  const txBlock = await runIotaClientJson(["tx-block", txId]);
+  const objectId = parseCreatedProofObjectId(txBlock, config.packageId);
+  if (!objectId) {
     return null;
   }
-
-  return null;
+  return getOnChainEventHashByObjectId(objectId);
 }
 
 export async function getOnChainEventHashByObjectId(objectId: string): Promise<string | null> {
-  if (!isIotaEnvConfigured()) {
-    throw new Error("IOTA integration disabled: missing IOTA_RPC_URL and/or signer credentials");
-  }
-
-  const client = getIotaClient();
-
-  // Placeholder query shape. Replace with concrete object/event parsing when SDK is wired.
-  const response = await client.request<unknown>("iota_getObject", [objectId]);
-  if (!response) {
+  void requireIotaConfig();
+  const objectResponse = await readObjectById(objectId);
+  if (!isRecord(objectResponse)) {
     return null;
   }
 
-  return null;
+  const data = isRecord(objectResponse.data) ? objectResponse.data : objectResponse;
+  const content = data.content;
+  return parseEventHashFromMoveContent(content);
 }
 
 export async function mintProofUnitsToken(
   input: MintProofUnitsInput
 ): Promise<MintProofUnitsResult> {
-  if (!isIotaEnvConfigured()) {
-    throw new Error("IOTA integration disabled: missing IOTA_RPC_URL and/or signer credentials");
-  }
-
   if (process.env.IOTA_ENABLE_PROOF_UNITS_MINT !== "1") {
     throw new Error("IOTA token minting disabled: set IOTA_ENABLE_PROOF_UNITS_MINT=1");
   }
@@ -142,11 +212,6 @@ export async function mintProofUnitsToken(
   }
 
   const config = requireIotaConfig();
-  getSigner();
-
-  // Placeholder integration shape for MVP.
-  // Replace with concrete on-chain mint transaction when token contract is available.
-  void getIotaClient();
   const txId = createHash("sha256")
     .update(JSON.stringify(input), "utf8")
     .digest("hex")

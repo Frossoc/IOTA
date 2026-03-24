@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type {
@@ -14,6 +15,7 @@ import UploadDropzone from "@/app/components/UploadDropzone";
 import MappingWizard from "@/app/components/MappingWizard";
 import PreviewTable from "@/app/components/PreviewTable";
 import ProofSummaryCard from "@/app/components/ProofSummaryCard";
+import AskStrategIA from "./AskStrategIA";
 import { findProcessTemplate } from "@/app/lib/templates/processTemplates";
 
 const EMPTY_MAPPING: ColumnMapping = {
@@ -408,7 +410,25 @@ export default function UploadPage() {
   const activeTabTitle = tabs.find((tab) => tab.key === activeTab)?.label ?? "Dashboard";
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="relative min-h-screen bg-black text-white">
+      <div className="pointer-events-none absolute left-6 top-4 z-40 opacity-80">
+        <Image
+          src="/biosphere.jpg"
+          alt="Biosphere"
+          width={30}
+          height={30}
+          className="h-8 w-auto object-contain opacity-75 transition hover:opacity-100"
+        />
+      </div>
+      <div className="pointer-events-none absolute right-6 top-4 z-40 opacity-80">
+        <Image
+          src="/iota.png"
+          alt="IOTA"
+          width={30}
+          height={30}
+          className="h-8 w-auto object-contain opacity-75 transition hover:opacity-100"
+        />
+      </div>
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-6">
         <aside className="w-full rounded-2xl border border-gray-800 bg-[#0c0c0c] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.45)] lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[280px] lg:flex-shrink-0 lg:p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">Proof of Records</h1>
@@ -1165,6 +1185,7 @@ export default function UploadPage() {
           ) : null}
         </section>
       </div>
+      <AskStrategIA />
     </main>
   );
 }

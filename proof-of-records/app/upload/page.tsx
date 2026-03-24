@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   ColumnMapping,
   ParseApiResponse,
@@ -38,6 +39,20 @@ const PROCESS_OPTIONS: ProcessType[] = [
 type DashboardTab = "create" | "verify" | "summary" | "technical" | "integrations";
 type NetworkChoice = "testnet" | "mainnet";
 type ProofUnitsChoice = "batch" | "merkle";
+
+function parseDashboardTab(value: string | null): DashboardTab | null {
+  if (
+    value === "create" ||
+    value === "verify" ||
+    value === "summary" ||
+    value === "technical" ||
+    value === "integrations"
+  ) {
+    return value;
+  }
+
+  return null;
+}
 
 function extractTxDigest(value: ProofResponse | null): string | undefined {
   if (!value) {
@@ -85,6 +100,7 @@ function toIpfsGatewayUrl(ipfsUri: string): string | null {
 }
 
 export default function UploadPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<DashboardTab>("create");
 
   const [projectName, setProjectName] = useState("");
@@ -127,6 +143,13 @@ export default function UploadPage() {
   const selectedTemplate = findProcessTemplate(processType);
   const mainnetUiConfirmed =
     selectedNetwork !== "mainnet" || mainnetConfirmInput.trim().toUpperCase() === "MAINNET";
+
+  useEffect(() => {
+    const nextTab = parseDashboardTab(searchParams.get("tab"));
+    if (nextTab) {
+      setActiveTab(nextTab);
+    }
+  }, [searchParams]);
 
   async function parseFile(nextFile: File) {
     setFile(nextFile);

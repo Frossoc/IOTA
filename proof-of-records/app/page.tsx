@@ -34,7 +34,7 @@ const translations = {
       "Built with Biosphere infrastructure, anchored on IOTA testnet, and designed for verifiable operational data that needs to be checked by organizations, partners, and the public.",
     aboutBiosphereTitle: "About Biosphere Rocks",
     aboutBiosphereText:
-      "Biosphere Rocks is a broader infrastructure initiative focused on verifiable records, transparency, and real-world data integrity using blockchain technologies. It connects ecosystems, data, and impact through traceable and auditable systems.",
+      "Proof of Records is part of the Biosphere Rocks infrastructure. Biosphere Rocks is building a new trust layer for real-world data. Instead of relying on platforms or reports, it enables data, actions, and evidence to become verifiable, traceable, and auditable by design. Proof of Records is the first step: it turns files and structured data into deterministic proofs that anyone can verify independently and without trust assumptions.",
     finalTitle: "Bring verifiable records into the workflow you already use.",
     finalPrimary: "Open Dashboard",
     finalSecondary: "Explore Proof Records",
@@ -82,7 +82,7 @@ const translations = {
       "Construit avec l'infrastructure Biosphere, ancre sur IOTA testnet, et pense pour des donnees operationnelles verifiables par des organisations, partenaires et publics.",
     aboutBiosphereTitle: "A propos de Biosphere Rocks",
     aboutBiosphereText:
-      "Biosphere Rocks est une initiative d'infrastructure plus large centree sur les enregistrements verifiables, la transparence et l'integrite des donnees du monde reel via des technologies blockchain. Elle relie ecosystemes, donnees et impact a travers des systemes tracables et auditables.",
+      "Proof of Records fait partie de l'infrastructure Biosphere Rocks. Biosphere Rocks construit une nouvelle couche de confiance pour les donnees du monde reel. Au lieu de s'appuyer sur des plateformes ou des rapports, cette infrastructure permet aux donnees, aux actions et aux preuves de devenir verifiables, tracables et auditables par conception. Proof of Records est la premiere etape : il transforme les fichiers et les donnees structurees en preuves deterministes que chacun peut verifier de maniere independante et sans hypothese de confiance.",
     finalTitle: "Integrez des preuves verifiables dans les flux que vous utilisez deja.",
     finalPrimary: "Ouvrir le dashboard",
     finalSecondary: "Explorer les preuves",
@@ -130,7 +130,7 @@ const translations = {
       "Construido con infraestructura Biosphere, anclado en IOTA testnet, y disenado para datos operativos verificables por organizaciones, aliados y publico.",
     aboutBiosphereTitle: "Sobre Biosphere Rocks",
     aboutBiosphereText:
-      "Biosphere Rocks es una iniciativa de infraestructura mas amplia enfocada en registros verificables, transparencia e integridad de datos del mundo real usando tecnologias blockchain. Conecta ecosistemas, datos e impacto mediante sistemas trazables y auditables.",
+      "Proof of Records forma parte de la infraestructura Biosphere Rocks. Biosphere Rocks esta construyendo una nueva capa de confianza para los datos del mundo real. En lugar de depender de plataformas o reportes, permite que los datos, las acciones y la evidencia sean verificables, trazables y auditables por diseno. Proof of Records es el primer paso: convierte archivos y datos estructurados en pruebas deterministas que cualquiera puede verificar de forma independiente y sin supuestos de confianza.",
     finalTitle: "Lleva registros verificables al flujo de trabajo que ya utilizas.",
     finalPrimary: "Abrir dashboard",
     finalSecondary: "Explorar proofs",

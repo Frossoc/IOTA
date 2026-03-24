@@ -7,6 +7,7 @@ import {
   runIotaClientJson,
   signAndExecuteRegisterProof,
   utf8BytesToString,
+  type IotaConfigOverride,
   type IotaNetwork,
 } from "@/app/lib/iota/client";
 
@@ -60,6 +61,17 @@ function getExplorerBase(network: IotaNetwork): string {
     return "https://explorer.iota.org/?network=devnet";
   }
   return "https://explorer.iota.org/?network=testnet";
+}
+
+function resolveExplorerNetwork(networkOverride?: IotaNetwork): IotaNetwork {
+  if (networkOverride) {
+    return networkOverride;
+  }
+  const raw = process.env.IOTA_NETWORK?.trim().toLowerCase();
+  if (raw === "mainnet" || raw === "testnet" || raw === "devnet") {
+    return raw;
+  }
+  return "testnet";
 }
 
 export function buildExplorerTx(network: IotaNetwork, txId: string): string {
@@ -140,8 +152,11 @@ async function normalizeRegisterInput(input: RegisterProofInput): Promise<Regist
   };
 }
 
-export async function registerProofOnChain(input: RegisterProofInput): Promise<RegisterProofResult> {
-  const config = requireIotaConfig();
+export async function registerProofOnChain(
+  input: RegisterProofInput,
+  override?: IotaConfigOverride
+): Promise<RegisterProofResult> {
+  const config = requireIotaConfig(override);
   const normalized = await normalizeRegisterInput(input);
   const eventHashHex = ensureHexFromBytes(normalized.event_hash_bytes);
   const uri = utf8BytesToString(normalized.uri_bytes);
@@ -151,7 +166,7 @@ export async function registerProofOnChain(input: RegisterProofInput): Promise<R
     uri,
     issuer: normalized.issuer,
     timestamp: normalized.timestamp,
-  });
+  }, override);
 
   const txUrl = buildExplorerTx(config.network, executed.txDigest);
   const objectUrl = executed.objectId ? buildExplorerObject(config.network, executed.objectId) : null;
@@ -168,29 +183,35 @@ export async function registerProofOnChain(input: RegisterProofInput): Promise<R
   };
 }
 
-export function getExplorerTxUrl(txId: string): string {
-  const config = requireIotaConfig();
-  return buildExplorerTx(config.network, txId);
+export function getExplorerTxUrl(txId: string, networkOverride?: IotaNetwork): string {
+  return buildExplorerTx(resolveExplorerNetwork(networkOverride), txId);
 }
 
-export function getExplorerObjectUrl(objectId: string): string {
-  const config = requireIotaConfig();
-  return buildExplorerObject(config.network, objectId);
+export function getExplorerObjectUrl(objectId: string, networkOverride?: IotaNetwork): string {
+  return buildExplorerObject(resolveExplorerNetwork(networkOverride), objectId);
 }
 
-export async function getOnChainEventHashByTxId(txId: string): Promise<string | null> {
-  const config = requireIotaConfig();
+export async function getOnChainEventHashByTxId(
+  txId: string,
+  override?: IotaConfigOverride
+): Promise<string | null> {
+  const packageId = override?.packageId?.trim() || process.env.IOTA_PACKAGE_ID?.trim();
+  if (!packageId) {
+    return null;
+  }
   const txBlock = await runIotaClientJson(["tx-block", txId]);
-  const objectId = parseCreatedProofObjectId(txBlock, config.packageId);
+  const objectId = parseCreatedProofObjectId(txBlock, packageId);
   if (!objectId) {
     return null;
   }
-  return getOnChainEventHashByObjectId(objectId);
+  return getOnChainEventHashByObjectId(objectId, override);
 }
 
-export async function getOnChainEventHashByObjectId(objectId: string): Promise<string | null> {
-  void requireIotaConfig();
-  const objectResponse = await readObjectById(objectId);
+export async function getOnChainEventHashByObjectId(
+  objectId: string,
+  override?: IotaConfigOverride
+): Promise<string | null> {
+  const objectResponse = await readObjectById(objectId, override);
   if (!isRecord(objectResponse)) {
     return null;
   }

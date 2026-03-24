@@ -11,6 +11,13 @@ export type IotaClientConfig = {
   privateKeyRef: "IOTA_PRIVATE_KEY";
 };
 
+export type IotaConfigOverride = {
+  rpcUrl?: string;
+  network?: IotaNetwork;
+  packageId?: string;
+  module?: string;
+};
+
 export type IotaClient = {
   config: IotaClientConfig;
   request: <TResponse>(method: string, params?: unknown[]) => Promise<TResponse>;
@@ -48,7 +55,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function readNetwork(): IotaNetwork {
+function readNetwork(override?: IotaConfigOverride): IotaNetwork {
+  if (override?.network) {
+    return override.network;
+  }
   const raw = process.env.IOTA_NETWORK?.toLowerCase();
   if (raw === "mainnet" || raw === "testnet" || raw === "devnet") {
     return raw;
@@ -83,41 +93,45 @@ export function ensureHexFromBytes(bytes: number[]): string {
   return bytesToHex(bytes);
 }
 
-export function requireIotaConfig(): IotaClientConfig {
-  const rpcUrl = process.env.IOTA_RPC_URL?.trim();
+export function requireIotaConfig(
+  override?: IotaConfigOverride,
+  options?: { requireSigner?: boolean }
+): IotaClientConfig {
+  const requireSigner = options?.requireSigner ?? true;
+  const rpcUrl = override?.rpcUrl?.trim() || process.env.IOTA_RPC_URL?.trim();
   if (!rpcUrl) {
     throw new Error("IOTA integration disabled: missing IOTA_RPC_URL");
   }
 
   const privateKey = process.env.IOTA_PRIVATE_KEY?.trim();
-  if (!privateKey) {
+  if (requireSigner && !privateKey) {
     throw new Error("IOTA integration disabled: missing IOTA_PRIVATE_KEY");
   }
 
-  const packageId = process.env.IOTA_PACKAGE_ID?.trim();
+  const packageId = override?.packageId?.trim() || process.env.IOTA_PACKAGE_ID?.trim();
   if (!packageId) {
     throw new Error("IOTA integration disabled: missing IOTA_PACKAGE_ID");
   }
 
   return {
     rpcUrl,
-    network: readNetwork(),
+    network: readNetwork(override),
     packageId,
-    module: process.env.IOTA_MODULE?.trim() || "proof",
+    module: override?.module?.trim() || process.env.IOTA_MODULE?.trim() || "proof",
     privateKeyRef: "IOTA_PRIVATE_KEY",
   };
 }
 
-export function createSignerFromEnv(): IotaSigner {
-  void requireIotaConfig();
+export function createSignerFromEnv(override?: IotaConfigOverride): IotaSigner {
+  void requireIotaConfig(override);
   return {
     kind: "private_key",
     secretRef: "IOTA_PRIVATE_KEY",
   };
 }
 
-export function createIotaClient(): IotaClient {
-  const config = requireIotaConfig();
+export function createIotaClient(override?: IotaConfigOverride): IotaClient {
+  const config = requireIotaConfig(override, { requireSigner: false });
 
   return {
     config,
@@ -216,6 +230,109 @@ function findProofObjectId(value: unknown, packageId: string, moduleName: string
   }
 
   return null;
+}
+
+function ownerMatchesAddress(owner: unknown, address: string): boolean {
+  if (typeof owner === "string") {
+    return owner.toLowerCase() === address.toLowerCase();
+  }
+  if (!isRecord(owner)) {
+    return false;
+  }
+  const addressOwner = owner.AddressOwner;
+  return typeof addressOwner === "string" && addressOwner.toLowerCase() === address.toLowerCase();
+}
+
+function getCreatedObjectIdFromEffects(effects: unknown): string | null {
+  if (!isRecord(effects) || !Array.isArray(effects.created)) {
+    return null;
+  }
+
+  for (const createdEntry of effects.created) {
+    if (!isRecord(createdEntry)) {
+      continue;
+    }
+    const reference = isRecord(createdEntry.reference) ? createdEntry.reference : undefined;
+    const objectId =
+      (reference && typeof reference.objectId === "string" && reference.objectId) ||
+      (typeof createdEntry.objectId === "string" && createdEntry.objectId) ||
+      null;
+
+    if (objectId) {
+      return objectId;
+    }
+  }
+
+  return null;
+}
+
+function getCreatedObjectIdFromObjectChanges(
+  objectChanges: unknown,
+  packageId: string,
+  moduleName: string,
+  signerAddress: string
+): string | null {
+  if (!Array.isArray(objectChanges)) {
+    return null;
+  }
+
+  const structTypeTarget = `${packageId.toLowerCase()}::${moduleName.toLowerCase()}::proof`;
+
+  for (const change of objectChanges) {
+    if (!isRecord(change)) {
+      continue;
+    }
+
+    const objectId =
+      (typeof change.objectId === "string" && change.objectId) ||
+      (typeof change.ObjectID === "string" && change.ObjectID) ||
+      null;
+    if (!objectId) {
+      continue;
+    }
+
+    const objectType =
+      (typeof change.objectType === "string" && change.objectType.toLowerCase()) ||
+      (typeof change.ObjectType === "string" && change.ObjectType.toLowerCase()) ||
+      "";
+    const owner = "owner" in change ? change.owner : undefined;
+
+    if (objectType.includes(structTypeTarget) || ownerMatchesAddress(owner, signerAddress)) {
+      return objectId;
+    }
+  }
+
+  return null;
+}
+
+function extractCreatedProofObjectId(
+  response: unknown,
+  packageId: string,
+  moduleName: string,
+  signerAddress: string
+): string | null {
+  const payload = isRecord(response) && "result" in response ? response.result : response;
+
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const byEffects = getCreatedObjectIdFromEffects(payload.effects);
+  if (byEffects) {
+    return byEffects;
+  }
+
+  const byObjectChanges = getCreatedObjectIdFromObjectChanges(
+    payload.objectChanges,
+    packageId,
+    moduleName,
+    signerAddress
+  );
+  if (byObjectChanges) {
+    return byObjectChanges;
+  }
+
+  return findProofObjectId(payload, packageId, moduleName);
 }
 
 function findFirstByKey(value: unknown, key: string): unknown {
@@ -379,10 +496,11 @@ export async function getActiveAddress(): Promise<string> {
 }
 
 export async function signAndExecuteRegisterProof(
-  input: SignAndExecuteRegisterProofInput
+  input: SignAndExecuteRegisterProofInput,
+  override?: IotaConfigOverride
 ): Promise<SignAndExecuteRegisterProofResult> {
-  const config = requireIotaConfig();
-  void createSignerFromEnv();
+  const config = requireIotaConfig(override);
+  void createSignerFromEnv(override);
 
   const eventHashHex = normalizeHex(input.eventHashHex);
   const args = [
@@ -408,7 +526,7 @@ export async function signAndExecuteRegisterProof(
     throw new Error("Unable to parse tx digest from iota client call response");
   }
 
-  const objectId = findProofObjectId(raw, config.packageId, config.module);
+  const objectId = extractCreatedProofObjectId(raw, config.packageId, config.module, input.issuer);
   return {
     txDigest,
     objectId,
@@ -416,23 +534,31 @@ export async function signAndExecuteRegisterProof(
   };
 }
 
-export async function readObjectById(objectId: string): Promise<unknown> {
-  const client = createIotaClient();
-  return client.request<unknown>("iota_getObject", [
-    objectId,
-    {
-      showType: true,
-      showOwner: true,
-      showPreviousTransaction: true,
-      showDisplay: true,
-      showContent: true,
-      showBcs: true,
-    },
-  ]);
+export async function readObjectById(objectId: string, override?: IotaConfigOverride): Promise<unknown> {
+  const client = createIotaClient(override);
+  try {
+    return await client.request<unknown>("iota_getObject", [
+      objectId,
+      {
+        showType: true,
+        showOwner: true,
+        showPreviousTransaction: true,
+        showDisplay: true,
+        showContent: true,
+        showBcs: true,
+      },
+    ]);
+  } catch {
+    // Fallback to the local CLI when direct RPC resolution is unavailable.
+    return runIotaClientJson(["object", objectId]);
+  }
 }
 
-export async function fetchProofByObjectId(objectId: string): Promise<OnChainProofObject | null> {
-  const raw = await runIotaClientJson(["object", objectId]);
+export async function fetchProofByObjectId(
+  objectId: string,
+  override?: IotaConfigOverride
+): Promise<OnChainProofObject | null> {
+  const raw = await readObjectById(objectId, override);
   const eventHashCandidate = findFirstByKey(raw, "event_hash");
   const event_hash_hex = toHexFromUnknownEventHash(eventHashCandidate);
 

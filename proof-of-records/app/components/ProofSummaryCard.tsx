@@ -15,7 +15,9 @@ export default function ProofSummaryCard({ proof }: ProofSummaryCardProps) {
         background: "#fcfcfc",
       }}
     >
-      <h2 style={{ fontSize: 18, fontWeight: 700 }}>Proof summary</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 700 }} className="text-xl font-semibold text-white tracking-wide">
+        Proof summary
+      </h2>
       <p style={{ marginTop: 8 }}>
         <strong>event_hash:</strong> <code>{proof.event_hash}</code>
       </p>
@@ -34,6 +36,22 @@ export default function ProofSummaryCard({ proof }: ProofSummaryCardProps) {
       <p style={{ marginTop: 6 }}>
         <strong>timestamp:</strong> {proof.timestamp}
       </p>
+      <p style={{ marginTop: 6 }}>
+        <strong>network:</strong> {proof.network ?? "testnet"}
+      </p>
+      <p style={{ marginTop: 6 }}>
+        <strong>proof_units_mode:</strong> {proof.proof_units_mode ?? "batch"}
+      </p>
+      {proof.proof_units_mode === "merkle" ? (
+        <>
+          <p style={{ marginTop: 6 }}>
+            <strong>merkle_root:</strong> <code>{proof.merkle?.root ?? "N/A"}</code>
+          </p>
+          <p style={{ marginTop: 6 }}>
+            <strong>merkle_leaf_count:</strong> {proof.merkle?.leaf_count ?? 0}
+          </p>
+        </>
+      ) : null}
     </section>
   );
 }

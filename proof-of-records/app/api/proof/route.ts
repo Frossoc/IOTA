@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { Buffer as NodeBuffer } from "node:buffer";
 import { createHash } from "node:crypto";
-import type { ColumnMapping, ProofResponse } from "@/app/types/records";
+import type { ColumnMapping, ProcessType, ProjectContext, ProofResponse } from "@/app/types/records";
 import { normalizeRows } from "@/app/lib/excel/normalize";
 import { stableStringify } from "@/app/lib/proof/canonicalize";
 import { sha256Hex } from "@/app/lib/proof/hash";
 import { storeBundle } from "@/app/lib/storage/storeBundle";
 import { uploadFileToPinata, uploadJsonToPinata } from "@/app/lib/storage/pinata";
 import { mintProofUnitsToken, registerProofOnChain } from "@/app/lib/iota/move";
+import { resolveIotaNetworkConfig, toIotaNetwork } from "@/app/lib/iota/networkConfig";
+import { getByteLimit, getRuntimeEnv } from "@/app/lib/server/env";
+import { enforceContentLengthLimit } from "@/app/lib/server/requestLimits";
+import { validateApiAccess } from "@/app/lib/server/apiAuth";
+import { safeLog } from "@/app/lib/server/logger";
+import { persistProofBestEffort } from "@/app/lib/persistence/proofs";
+import { estimateResponseSize, readRequestSize, writeAuditLogBestEffort } from "@/app/lib/security/audit";
 
 export const runtime = "nodejs";
 
@@ -19,6 +26,16 @@ type CellTextValue = {
 type RichTextValue = {
   richText: Array<{ text?: string }>;
 };
+
+const PROCESS_TYPES: ProcessType[] = [
+  "Waste traceability",
+  "ESG reporting",
+  "Supply chain",
+  "Supply chain event",
+  "Compliance logs",
+  "Media / news integrity",
+  "Other",
+];
 
 function isCellTextValue(value: unknown): value is CellTextValue {
   return (
@@ -77,6 +94,23 @@ function isColumnMapping(value: unknown): value is ColumnMapping {
     candidate.value.trim().length > 0 &&
     typeof candidate.unit === "string" &&
     candidate.unit.trim().length > 0
+  );
+}
+
+function isProcessType(value: unknown): value is ProcessType {
+  return typeof value === "string" && PROCESS_TYPES.includes(value as ProcessType);
+}
+
+function isProjectContext(value: unknown): value is ProjectContext {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.project_name === "string" &&
+    candidate.project_name.trim().length > 0 &&
+    isProcessType(candidate.process_type) &&
+    (candidate.description === undefined || typeof candidate.description === "string")
   );
 }
 
@@ -148,35 +182,128 @@ function hexToBytes(hexValue: string): number[] {
 }
 
 export async function POST(req: Request) {
+  const startedAt = Date.now();
+  const requestSize = readRequestSize(req);
+  const endpoint = "/api/proof";
+  const method = "POST";
+  const userAgent = req.headers.get("user-agent");
+  let auditIdentity: { apiKeyId: string | null; clientId: string | null; clientIp: string } = {
+    apiKeyId: null,
+    clientId: null,
+    clientIp: "unknown",
+  };
+
+  const respond = (
+    body: Record<string, unknown>,
+    status: number,
+    options?: { retryAfterSeconds?: number; errorCode?: string | null }
+  ) => {
+    void writeAuditLogBestEffort({
+      endpoint,
+      method,
+      status_code: status,
+      latency_ms: Date.now() - startedAt,
+      ip: auditIdentity.clientIp,
+      user_agent: userAgent,
+      api_key_id: auditIdentity.apiKeyId,
+      client_id: auditIdentity.clientId,
+      request_size_bytes: requestSize,
+      response_size_bytes: estimateResponseSize(body),
+      error_code: options?.errorCode ?? (status >= 400 ? "request_failed" : null),
+    });
+
+    const headers = new Headers();
+    if (options?.retryAfterSeconds && options.retryAfterSeconds > 0) {
+      headers.set("Retry-After", String(options.retryAfterSeconds));
+    }
+
+    return NextResponse.json(body, { status, headers });
+  };
+
   try {
+    const auth = await validateApiAccess(req);
+    auditIdentity = {
+      apiKeyId: auth.identity.apiKeyId,
+      clientId: auth.identity.clientId,
+      clientIp: auth.identity.clientIp,
+    };
+
+    if (!auth.ok) {
+      return respond(
+        { error: auth.error },
+        auth.status,
+        { retryAfterSeconds: auth.retryAfterSeconds, errorCode: "auth_or_rate_limit" }
+      );
+    }
+
+    const uploadLimit = getByteLimit("MAX_MULTIPART_BYTES", 25 * 1024 * 1024);
+    const contentLengthCheck = enforceContentLengthLimit(req, uploadLimit);
+    if (!contentLengthCheck.ok) {
+      return respond({ error: contentLengthCheck.error }, contentLengthCheck.status, { errorCode: "payload_limit" });
+    }
+
     const form = await req.formData();
     const file = form.get("file");
     const mappingRaw = form.get("mapping");
+    const projectContextRaw = form.get("project_context");
+    const requestedNetwork = form.get("network");
+    const mainnetConfirmToken = form.get("mainnet_confirm_token");
     const photo = form.get("photo");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Missing file" }, { status: 400 });
+      return respond({ error: "Missing file" }, 400, { errorCode: "missing_file" });
     }
 
     if (typeof mappingRaw !== "string") {
-      return NextResponse.json({ error: "Missing mapping" }, { status: 400 });
+      return respond({ error: "Missing mapping" }, 400, { errorCode: "missing_mapping" });
     }
 
     let parsedMapping: unknown;
     try {
       parsedMapping = JSON.parse(mappingRaw);
     } catch {
-      return NextResponse.json({ error: "Invalid mapping JSON" }, { status: 400 });
+      return respond({ error: "Invalid mapping JSON" }, 400, { errorCode: "invalid_mapping_json" });
     }
 
     if (!isColumnMapping(parsedMapping)) {
-      return NextResponse.json({ error: "Invalid mapping shape" }, { status: 400 });
+      return respond({ error: "Invalid mapping shape" }, 400, { errorCode: "invalid_mapping_shape" });
+    }
+
+    const contextWarnings: string[] = [];
+    let projectContext: ProjectContext | undefined;
+    if (typeof projectContextRaw === "string" && projectContextRaw.trim().length > 0) {
+      try {
+        const parsedContext = JSON.parse(projectContextRaw) as unknown;
+        if (isProjectContext(parsedContext)) {
+          projectContext = {
+            project_name: parsedContext.project_name.trim(),
+            process_type: parsedContext.process_type,
+            ...(parsedContext.description && parsedContext.description.trim().length > 0
+              ? { description: parsedContext.description.trim() }
+              : {}),
+          };
+        } else {
+          contextWarnings.push("Invalid project_context ignored.");
+        }
+      } catch {
+        contextWarnings.push("Malformed project_context ignored.");
+      }
     }
 
     const buffer = await file.arrayBuffer();
     const rawRows = await parseFirstSheetRows(buffer);
 
     const { rows, errors, warnings } = normalizeRows(rawRows, parsedMapping);
+    warnings.push(...auth.warnings);
+    warnings.push(...contextWarnings);
+
+    const networkConfig = resolveIotaNetworkConfig({
+      requestedNetwork,
+      mainnetConfirmToken,
+    });
+    if (networkConfig.warning) {
+      warnings.push(networkConfig.warning);
+    }
 
     const issuer = "biosphere-rocks";
     const timestamp = new Date().toISOString();
@@ -189,9 +316,10 @@ export async function POST(req: Request) {
 
     if (photo instanceof File) {
       if (!process.env.PINATA_JWT) {
-        return NextResponse.json(
+        return respond(
           { error: "PINATA_JWT is required when photo evidence is provided" },
-          { status: 400 }
+          400,
+          { errorCode: "missing_pinata_jwt" }
         );
       }
 
@@ -206,7 +334,7 @@ export async function POST(req: Request) {
           photo_uri: uploadedPhoto.uri,
         };
       } catch {
-        return NextResponse.json({ error: "Failed to upload photo evidence" }, { status: 502 });
+        return respond({ error: "Failed to upload photo evidence" }, 502, { errorCode: "photo_upload_failed" });
       }
     }
 
@@ -227,6 +355,7 @@ export async function POST(req: Request) {
       adapter: "records",
       issuer,
       timestamp,
+      ...(projectContext ? { project_context: projectContext } : {}),
       rows: sortedRows,
       metrics: {
         total_units: totalUnits,
@@ -291,15 +420,11 @@ export async function POST(req: Request) {
       }
     }
 
-    const hasIotaEnv =
-      Boolean(process.env.IOTA_RPC_URL && process.env.IOTA_RPC_URL.trim().length > 0) &&
-      Boolean(
-        (process.env.IOTA_PRIVATE_KEY && process.env.IOTA_PRIVATE_KEY.trim().length > 0) ||
-          (process.env.IOTA_MNEMONIC && process.env.IOTA_MNEMONIC.trim().length > 0)
-      );
-    const anchorOnchain = process.env.IOTA_ANCHOR_ONCHAIN === "true";
-    const packageId = process.env.IOTA_PACKAGE_ID?.trim();
-    const iotaNetwork = process.env.IOTA_NETWORK?.trim() || "testnet";
+    const runtimeEnv = getRuntimeEnv();
+    const hasIotaEnv = Boolean(networkConfig.rpcUrl) && runtimeEnv.hasIotaSigner;
+    const anchorOnchain = runtimeEnv.anchorOnchain;
+    const packageId = networkConfig.packageId ?? undefined;
+    const iotaNetwork = networkConfig.network;
 
     if (anchorOnchain) {
       const onchainIssuer =
@@ -319,16 +444,18 @@ export async function POST(req: Request) {
             uri_bytes: Array.from(NodeBuffer.from(uri, "utf8")),
             issuer: onchainIssuer,
             timestamp: onchainTimestamp,
+          }, {
+            network: toIotaNetwork(iotaNetwork),
+            rpcUrl: networkConfig.rpcUrl ?? undefined,
+            packageId,
+            module: networkConfig.moduleName,
           });
           txDigest = anchored.txDigest;
           objectId = anchored.objectId;
           txId = anchored.txId;
           explorerTx = anchored.explorer.tx;
           explorerObject = anchored.explorer.object ?? undefined;
-          explorerPackage =
-            iotaNetwork === "mainnet"
-              ? `https://explorer.iota.org/object/${packageId}`
-              : `https://explorer.iota.org/?network=${iotaNetwork}/object/${packageId}`;
+          explorerPackage = packageId ? `${networkConfig.explorer.objectBase}${packageId}` : undefined;
         } catch (error) {
           const message = error instanceof Error ? error.message : "Unknown anchor error";
           anchorError = message;
@@ -385,10 +512,40 @@ export async function POST(req: Request) {
         : {}),
       ...(token ? { token } : {}),
       ...(evidence ? { evidence } : {}),
+      ...(projectContext ? { project_context: projectContext } : {}),
+      network: iotaNetwork,
     };
 
-    return NextResponse.json(response);
-  } catch {
-    return NextResponse.json({ error: "Failed to generate proof bundle" }, { status: 500 });
+    const persisted = await persistProofBestEffort({
+      source: "excel",
+      rows_count: response.rows_count,
+      total_units: response.metrics?.total_units ?? 0,
+      event_hash: response.event_hash,
+      canonical_string: response.canonical_string,
+      uri: response.uri,
+      issuer: response.issuer,
+      timestamp: response.timestamp,
+      ...(response.tx_digest ? { tx_digest: response.tx_digest } : {}),
+      ...(response.object_id !== undefined ? { object_id: response.object_id } : {}),
+      ...(response.explorer ? { explorer: response.explorer } : {}),
+      ...(response.evidence ? { evidence: response.evidence } : {}),
+      ...(response.project_context ? { project_context: response.project_context } : {}),
+      warnings: [...response.warnings],
+      errors: [...response.errors],
+    });
+
+    if (persisted.ok) {
+      response.proof_db_id = persisted.id;
+    } else {
+      response.warnings.push("supabase_persist_failed");
+    }
+
+    return respond(response as unknown as Record<string, unknown>, 200);
+  } catch (error) {
+    safeLog("error", "Failed to generate proof bundle", {
+      route: "/api/proof",
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return respond({ error: "Failed to generate proof bundle" }, 500, { errorCode: "proof_route_exception" });
   }
 }

@@ -23,8 +23,66 @@ export type ParseResponse = {
   totalRows: number;
 };
 
+export type ProcessType =
+  | "Waste traceability"
+  | "ESG reporting"
+  | "Supply chain"
+  | "Supply chain event"
+  | "Compliance logs"
+  | "Media / news integrity"
+  | "Other";
+
+export type ProjectContext = {
+  project_name: string;
+  process_type: string;
+  description?: string;
+};
+
+export type ProofJsonRequest = {
+  project_context: {
+    project_name: string;
+    process_type: string;
+    description?: string;
+  };
+  records: Array<{
+    date: string;
+    type: string;
+    value: number;
+    unit: string;
+    site?: string;
+    operator?: string;
+    notes?: string;
+    record_id?: string;
+  }>;
+  evidence?: {
+    photo_base64: string;
+    filename?: string;
+    content_type?: string;
+  };
+  proof_units_mode?: "batch" | "merkle";
+  network?: "testnet" | "mainnet";
+  mainnet_confirm_token?: string;
+};
+
+export type ProofUnitsMode = "batch" | "merkle";
+
+export type MerkleLeafResponse = {
+  index: number;
+  leaf_hash: string;
+  proof: string[];
+};
+
+export type MerkleProofResponse = {
+  algorithm: "sha256-v1";
+  root: string;
+  leaf_count: number;
+  leaves: MerkleLeafResponse[];
+};
+
 export type ProofResponse = {
   ok: true;
+  proof_db_id?: string;
+  proof_units_mode?: ProofUnitsMode;
   rows_count: number;
   event_hash: string;
   canonical_string: string;
@@ -54,6 +112,24 @@ export type ProofResponse = {
     photo_hash: string;
     photo_uri: string;
   };
+  merkle?: MerkleProofResponse;
+  project_context?: ProjectContext;
+  network?: "testnet" | "mainnet";
+};
+
+export type VerifyRowRequest = {
+  row: RecordRow;
+  row_index: number;
+  proof: string[];
+  expected_root: string;
+};
+
+export type VerifyRowResponse = {
+  ok: boolean;
+  match?: boolean;
+  computed_leaf_hash?: string;
+  computed_root?: string;
+  error?: string;
 };
 
 export type VerifyResponse = {
@@ -80,6 +156,8 @@ export type VerifyRequest = {
   tx_digest?: string;
   objectId?: string;
   object_id?: string;
+  network?: "testnet" | "mainnet";
+  mainnet_confirm_token?: string;
 };
 
 export type RawSpreadsheetRow = Record<string, unknown>;

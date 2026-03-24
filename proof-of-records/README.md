@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Proof of Records
+Turn operational datasets into anchored integrity proofs with optional record-level Merkle verification.
 
-## Getting Started
+## Overview
 
-First, run the development server:
+Proof of Records is a Next.js App Router + TypeScript project for turning spreadsheets or JSON datasets into deterministic proofs that can be hashed, persisted, published, and anchored on IOTA testnet. It includes public proof pages, downloadable bundles, PDF summaries, Supabase-backed persistence, API key protection, and optional Phase 10 Merkle proof units.
+
+## Key Features
+
+- Excel upload flow with column mapping and optional photo evidence
+- JSON proof generation API with optional base64 evidence
+- Deterministic canonicalization and SHA-256 hashing
+- On-chain anchoring on IOTA testnet with safe mainnet gating
+- Public verification endpoints and proof pages
+- PDF summary export and bundle export
+- Supabase best-effort persistence for proof metadata
+- API key auth, rate limiting, and audit logging
+- Optional Merkle mode for record-level verification with one anchored root
+
+## IOTA Usage
+
+The app uses IOTA as the on-chain integrity anchor:
+
+- `event_hash` commitments are registered on-chain through the Move package configured in env
+- testnet is the default network
+- mainnet requires both env enablement and explicit confirmation
+- `/api/verify` can compare a local canonical hash against on-chain proof objects or transaction-derived proof objects
+
+## Architecture
+
+- Frontend:
+  - `/upload` for proof creation and operator workflow
+  - `/verify` for manual verification
+  - `/dashboard` for persisted proofs
+  - `/proof/[id]` for public proof views
+- API:
+  - `/api/proof` for Excel multipart proofs
+  - `/api/proof-json` for JSON proofs
+  - `/api/verify` for local + on-chain verification
+  - `/api/verify-row` for Merkle row-to-root verification
+  - `/api/proof-summary` for PDF export
+  - `/api/verify-proof` for public proof lookup by persisted id
+  - `/api/proof-bundle` for bundle download
+- Storage and persistence:
+  - Pinata/IPFS for bundle and evidence storage
+  - Supabase `public.proof_of_records` for proof metadata
+- On-chain:
+  - IOTA Move package for proof registration
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the example env file:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Fill in real values for:
+
+- IOTA RPC, package id, signer, issuer address
+- Pinata JWT and gateway
+- Supabase URL, service role key, and database URL
+- test API key
+
+4. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/`
+- `/upload`
+- `/verify`
+- `/dashboard`
+- `/proof/[id]`
 
-## Learn More
+## Submission Notes
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Use `.env.example` as the setup template
+- Do not commit real `.env.local` values
+- Testnet is the intended demo network unless mainnet is explicitly authorized

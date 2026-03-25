@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type {
   ColumnMapping,
@@ -17,7 +16,9 @@ import MappingWizard from "@/app/components/MappingWizard";
 import PreviewTable from "@/app/components/PreviewTable";
 import ProofSummaryCard from "@/app/components/ProofSummaryCard";
 import AskStrategIA from "./AskStrategIA";
+import ProofInterpretationCard from "./ProofInterpretationCard";
 import { findProcessTemplate } from "@/app/lib/templates/processTemplates";
+import { resolveEvidenceUrl } from "@/app/lib/storage/gateway";
 
 const EMPTY_MAPPING: ColumnMapping = {
   date: "",
@@ -39,6 +40,17 @@ const PROCESS_OPTIONS: ProcessType[] = [
 type DashboardTab = "create" | "verify" | "summary" | "technical" | "integrations";
 type NetworkChoice = "testnet" | "mainnet";
 type ProofUnitsChoice = "batch" | "merkle";
+type InputMode = "excel" | "json";
+type JsonRecordInput = {
+  date: string;
+  type: string;
+  value: number;
+  unit: string;
+  site?: string;
+  operator?: string;
+  notes?: string;
+  record_id?: string;
+};
 
 function parseDashboardTab(value: string | null): DashboardTab | null {
   if (
@@ -78,37 +90,28 @@ function buildTxBlockUrl(txDigest: string, network = "testnet"): string {
   if (net === "mainnet") {
     return `https://explorer.iota.org/txblock/${txDigest}`;
   }
-  return `https://explorer.iota.org/?network=${encodeURIComponent(net)}/txblock/${txDigest}`;
-}
-
-function toIpfsGatewayUrl(ipfsUri: string): string | null {
-  const trimmed = ipfsUri.trim();
-  if (!trimmed.startsWith("ipfs://")) {
-    return null;
-  }
-
-  const path = trimmed.slice("ipfs://".length).replace(/^\/+/, "");
-  if (!path) {
-    return null;
-  }
-
-  const configuredGateway = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
-  const base = configuredGateway && configuredGateway.length > 0 ? configuredGateway : "https://ipfs.io";
-  const normalizedBase = base.replace(/\/+$/, "");
-
-  return `${normalizedBase}/ipfs/${path}`;
+  return `https://explorer.iota.org/txblock/${txDigest}?network=${encodeURIComponent(net)}`;
 }
 
 export default function UploadPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<DashboardTab>("create");
 
+  const [inputMode, setInputMode] = useState<InputMode>("excel");
   const [projectName, setProjectName] = useState("");
   const [processType, setProcessType] = useState<ProcessType>("Waste traceability");
   const [description, setDescription] = useState("");
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkChoice>("testnet");
   const [mainnetConfirmInput, setMainnetConfirmInput] = useState("");
   const [proofUnitsMode, setProofUnitsMode] = useState<ProofUnitsChoice>("batch");
+  const [jsonInput, setJsonInput] = useState(`[
+  {
+    "date": "2026-02-21",
+    "type": "plastic",
+    "value": 5,
+    "unit": "kg"
+  }
+]`);
 
   const [file, setFile] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -118,6 +121,7 @@ export default function UploadPage() {
   const [parseLoading, setParseLoading] = useState(false);
   const [proofLoading, setProofLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [verifyCanonicalString, setVerifyCanonicalString] = useState("");
   const [verifyExpectedHash, setVerifyExpectedHash] = useState("");
@@ -129,6 +133,7 @@ export default function UploadPage() {
 
   const [proofRaw, setProofRaw] = useState<Record<string, unknown> | null>(null);
   const [verifyRaw, setVerifyRaw] = useState<Record<string, unknown> | null>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
 
   const mappingReady = useMemo(
     () =>
@@ -239,38 +244,134 @@ export default function UploadPage() {
         return;
       }
 
-      setProof(data);
-      setProofRaw(data as unknown as Record<string, unknown>);
-      setVerifyCanonicalString(data.canonical_string);
-      setVerifyExpectedHash(data.event_hash);
-      setVerifyObjectId(data.object_id ?? "");
-      setVerifyTxDigest(data.tx_digest ?? data.txId ?? "");
-      localStorage.setItem(
-        "por:last_proof",
-        JSON.stringify({
-          event_hash: data.event_hash,
-          canonical_string: data.canonical_string,
-          uri: data.uri,
-          ...(data.txId ? { txId: data.txId } : {}),
-          ...(data.tx_digest ? { tx_digest: data.tx_digest } : {}),
-          ...(data.object_id ? { object_id: data.object_id } : {}),
-          timestamp: data.timestamp,
-        })
-      );
-
-      if (data.errors.length > 0) {
-        setErrorMessage(
-          `Proof generated with ${data.errors.length} normalization error(s). Review details below.`
-        );
-      } else if (data.warnings.length > 0) {
-        setErrorMessage(
-          `Proof generated with ${data.warnings.length} warning(s). Review details below.`
-        );
-      }
-
-      setActiveTab("summary");
+      applyGeneratedProof(data);
     } catch {
       setErrorMessage("Failed to generate proof bundle.");
+    } finally {
+      setProofLoading(false);
+    }
+  }
+
+  function applyGeneratedProof(data: ProofResponse) {
+    setProof(data);
+    setProofRaw(data as unknown as Record<string, unknown>);
+    setVerifyCanonicalString(data.canonical_string);
+    setVerifyExpectedHash(data.event_hash);
+    setVerifyObjectId(data.object_id ?? "");
+    setVerifyTxDigest(data.tx_digest ?? data.txId ?? "");
+    localStorage.setItem(
+      "por:last_proof",
+      JSON.stringify({
+        event_hash: data.event_hash,
+        canonical_string: data.canonical_string,
+        uri: data.uri,
+        ...(data.txId ? { txId: data.txId } : {}),
+        ...(data.tx_digest ? { tx_digest: data.tx_digest } : {}),
+        ...(data.object_id ? { object_id: data.object_id } : {}),
+        timestamp: data.timestamp,
+      })
+    );
+
+    if (data.errors.length > 0) {
+      setErrorMessage(`Proof generated with ${data.errors.length} normalization error(s). Review details below.`);
+    } else if (data.warnings.length > 0) {
+      setErrorMessage(`Proof generated with ${data.warnings.length} warning(s). Review details below.`);
+    }
+
+    setActiveTab("summary");
+  }
+
+  function parseJsonRecordsInput(input: string): JsonRecordInput[] {
+    const parsed = JSON.parse(input) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed as JsonRecordInput[];
+    }
+    if (typeof parsed === "object" && parsed !== null && "records" in parsed) {
+      const records = (parsed as { records?: unknown }).records;
+      if (Array.isArray(records)) {
+        return records as JsonRecordInput[];
+      }
+    }
+    throw new Error("JSON input must be an array of records or an object containing records[].");
+  }
+
+  async function fileToBase64(nextFile: File): Promise<string> {
+    const buffer = await nextFile.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    bytes.forEach((value) => {
+      binary += String.fromCharCode(value);
+    });
+    return window.btoa(binary);
+  }
+
+  function downloadExcelTemplate() {
+    const csv = ["date,type,value,unit", "2026-02-21,plastic,5,kg"].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "proof-of-records-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  async function onGenerateJsonProof() {
+    if (!projectReady) {
+      setErrorMessage("Project Name is mandatory.");
+      return;
+    }
+
+    setProofLoading(true);
+    setErrorMessage(null);
+    setProof(null);
+
+    try {
+      const payload: Record<string, unknown> = {
+        project_context: {
+          project_name: projectName.trim(),
+          process_type: processType,
+          ...(description.trim().length > 0 ? { description: description.trim() } : {}),
+        },
+        records: parseJsonRecordsInput(jsonInput),
+        ...(proofUnitsMode === "merkle" ? { proof_units_mode: "merkle" } : {}),
+      };
+
+      if (photo) {
+        payload.evidence = {
+          photo_base64: await fileToBase64(photo),
+          filename: photo.name,
+          content_type: photo.type || "image/jpeg",
+        };
+      }
+
+      if (selectedNetwork === "mainnet" && mainnetUiConfirmed) {
+        payload.network = "mainnet";
+        payload.mainnet_confirm_token = mainnetConfirmInput.trim();
+      }
+
+      const response = await fetch("/api/proof-json", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as ProofResponse | { error?: string };
+
+      if (!response.ok || !("ok" in data && data.ok)) {
+        const message =
+          "error" in data && typeof data.error === "string"
+            ? data.error
+            : "Failed to generate proof from JSON.";
+        setErrorMessage(message);
+        return;
+      }
+
+      applyGeneratedProof(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to parse JSON input.";
+      setErrorMessage(message);
     } finally {
       setProofLoading(false);
     }
@@ -379,12 +480,45 @@ export default function UploadPage() {
   }
 
   async function copyText(label: string, value: string) {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      setErrorMessage(`Nothing to copy for ${label}.`);
+      return;
+    }
+
+    const fallbackCopy = (text: string) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    };
+
     try {
-      await navigator.clipboard.writeText(value);
-      setErrorMessage(`${label} copied to clipboard.`);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(trimmed);
+      } else {
+        fallbackCopy(trimmed);
+      }
+      setCopiedKey(label);
+      setErrorMessage(null);
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setCopiedKey((current) => (current === label ? null : current));
+      }, 1500);
     } catch {
       setErrorMessage(`Could not copy ${label}.`);
     }
+  }
+
+  function getCopyLabel(key: string, idle = "Copy"): string {
+    return copiedKey === key ? "Copied" : idle;
   }
 
   const txDigest = extractTxDigest(proof);
@@ -431,6 +565,8 @@ export default function UploadPage() {
     { key: "integrations", label: "Integrations" },
   ];
   const activeTabTitle = tabs.find((tab) => tab.key === activeTab)?.label ?? "Dashboard";
+
+  const evidenceUrl = resolveEvidenceUrl(proof?.evidence?.photo_uri);
 
   return (
     <main className="relative min-h-screen bg-black text-white">
@@ -492,6 +628,14 @@ export default function UploadPage() {
           </header>
 
           {errorMessage ? <p style={{ marginTop: 12, color: "crimson" }}>{errorMessage}</p> : null}
+          {proof ? (
+            <ProofInterpretationCard
+              proof={proof}
+              onViewTechnicalDetails={() => setActiveTab("technical")}
+              onVerifyProof={() => setActiveTab("verify")}
+              onDownloadSummary={() => void onDownloadProofSummary()}
+            />
+          ) : null}
 
           {activeTab === "create" ? (
             <>
@@ -644,6 +788,89 @@ export default function UploadPage() {
                     Each record will be individually verifiable while only one root is anchored on-chain.
                   </div>
                 ) : null}
+                <label style={{ display: "block", marginTop: 10 }}>
+                  <span style={{ fontWeight: 600 }}>Input Mode</span>
+                  <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                    {(["excel", "json"] as InputMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setInputMode(mode)}
+                        className="text-black"
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 10,
+                          border: "1px solid #3a3a3a",
+                          background: inputMode === mode ? "#ffffff" : "#f3f4f6",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {mode === "excel" ? "Excel" : "JSON"}
+                      </button>
+                    ))}
+                  </div>
+                </label>
+
+                <section
+                  style={{
+                    marginTop: 12,
+                    border: "1px solid #3a3a3a",
+                    borderRadius: 10,
+                    background: "#0b0b0b",
+                    padding: 12,
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#ffffff" }}>Expected dataset format</h3>
+                  <p style={{ margin: "8px 0 0 0", color: "#d1d5db" }}>
+                    Minimum required columns: <strong>date</strong>, <strong>type</strong>, <strong>value</strong>,{" "}
+                    <strong>unit</strong>.
+                  </p>
+                  <p style={{ margin: "6px 0 0 0", color: "#9ca3af" }}>
+                    Additional columns are allowed and can be ignored unless you choose to map them.
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ border: "1px solid #2f2f2f", borderRadius: 10, padding: 10, background: "#111111" }}>
+                      <strong style={{ display: "block" }}>date</strong>
+                      <span style={{ color: "#d1d5db" }}>2026-02-21</span>
+                    </div>
+                    <div style={{ border: "1px solid #2f2f2f", borderRadius: 10, padding: 10, background: "#111111" }}>
+                      <strong style={{ display: "block" }}>type</strong>
+                      <span style={{ color: "#d1d5db" }}>plastic</span>
+                    </div>
+                    <div style={{ border: "1px solid #2f2f2f", borderRadius: 10, padding: 10, background: "#111111" }}>
+                      <strong style={{ display: "block" }}>value</strong>
+                      <span style={{ color: "#d1d5db" }}>5</span>
+                    </div>
+                    <div style={{ border: "1px solid #2f2f2f", borderRadius: 10, padding: 10, background: "#111111" }}>
+                      <strong style={{ display: "block" }}>unit</strong>
+                      <span style={{ color: "#d1d5db" }}>kg</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={downloadExcelTemplate}
+                    className="text-black"
+                    style={{
+                      marginTop: 10,
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      border: "1px solid #ddd",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Download Excel Template
+                  </button>
+                </section>
 
                 <section
                   style={{
@@ -689,15 +916,42 @@ export default function UploadPage() {
                   borderRadius: 12,
                   padding: 14,
                   background: "rgba(255, 255, 255, 0.02)",
-                }}
-              >
-                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Step 2 — Upload Evidence</h2>
-                <UploadDropzone onFileSelected={parseFile} />
-                {file ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Dataset: {file.name}</p> : null}
-                {parseLoading ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Parsing...</p> : null}
+                  }}
+                >
+                  <h2 style={{ fontSize: 18, fontWeight: 700 }}>
+                    {inputMode === "excel" ? "Step 2 — Upload Data and Evidence" : "Step 2 — Paste JSON and Add Evidence"}
+                  </h2>
+                  {inputMode === "excel" ? (
+                    <>
+                      <UploadDropzone onFileSelected={parseFile} />
+                      {file ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Dataset: {file.name}</p> : null}
+                      {parseLoading ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Parsing...</p> : null}
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ marginTop: 10, color: "#d1d5db" }}>
+                        Use a JSON array of records or an object with a <code>records</code> array.
+                      </p>
+                      <textarea
+                        value={jsonInput}
+                        onChange={(event) => setJsonInput(event.target.value)}
+                        rows={12}
+                        style={{
+                          width: "100%",
+                          marginTop: 8,
+                          borderRadius: 10,
+                          border: "1px solid #3a3a3a",
+                          padding: "10px 12px",
+                          fontFamily: "monospace",
+                          background: "#0f0f0f",
+                          color: "#fff",
+                        }}
+                      />
+                    </>
+                  )}
 
-                <label style={{ display: "block", marginTop: 12 }}>
-                  <span style={{ fontWeight: 600 }}>Upload Photo Evidence (optional)</span>
+                  <label style={{ display: "block", marginTop: 12 }}>
+                    <span style={{ fontWeight: 600 }}>Upload Photo Evidence (optional)</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -708,7 +962,7 @@ export default function UploadPage() {
                 {photo ? <p style={{ marginTop: 6, color: "#d1d5db" }}>Photo: {photo.name}</p> : null}
               </section>
 
-              {parse ? (
+              {inputMode === "excel" && parse ? (
                 <>
                   <p style={{ marginTop: 14, color: "#d1d5db" }}>
                     Detected {parse.columns.length} columns, {parse.totalRows} data rows.
@@ -748,6 +1002,25 @@ export default function UploadPage() {
                 </>
               ) : null}
 
+              {inputMode === "json" ? (
+                <button
+                  onClick={onGenerateJsonProof}
+                  disabled={!projectReady || proofLoading || !mainnetUiConfirmed}
+                  className="text-black"
+                  style={{
+                    marginTop: 12,
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    fontWeight: 600,
+                    background: "#fff",
+                    cursor: !projectReady || proofLoading || !mainnetUiConfirmed ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {proofLoading ? "Generating proof..." : "Generate Proof from JSON"}
+                </button>
+              ) : null}
+
               {proof ? (
                 <section
                   style={{
@@ -759,53 +1032,14 @@ export default function UploadPage() {
                   }}
                 >
                   <h2 style={{ fontSize: 18, fontWeight: 700 }}>Step 3 — Proof Created</h2>
-                  <p style={{ marginTop: 8 }}>Project: {projectName}</p>
-                  <p>Process: {processType}</p>
-                  <p>Network: {proof.network ?? selectedNetwork}</p>
-                  <p>Records: {proof.rows_count}</p>
-                  <p>Integrity Status: Verified</p>
-                  <p>
-                    Evidence:{" "}
-                    {proof.evidence?.photo_hash && proof.evidence?.photo_uri ? "Attached ✅" : "None"}
-                  </p>
-                  <p>
-                    Proof ID: <code>{proof.object_id ?? "(pending)"}</code>
-                  </p>
                   <p style={{ marginTop: 8 }}>
-                    Your project data is now cryptographically secured and publicly verifiable.
+                    Status: <strong>Proof generated</strong>
                   </p>
-
-                  <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {txExplorer ? (
-                      <a href={txExplorer} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700 }}>
-                        View on Explorer
-                      </a>
-                    ) : null}
-                    <button
-                      className="text-black"
-                      type="button"
-                      onClick={() => void onDownloadProofSummary()}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 10,
-                        border: "1px solid #ddd",
-                        background: "#fff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Download Proof Summary
-                    </button>
-                    <Link
-                      href={`/verify?${new URLSearchParams({
-                        expected_event_hash: proof.event_hash,
-                        ...(proof.object_id ? { object_id: proof.object_id } : {}),
-                        ...(txDigest ? { tx_digest: txDigest } : {}),
-                      }).toString()}`}
-                      style={{ fontWeight: 700 }}
-                    >
-                      Verification Link
-                    </Link>
-                  </div>
+                  <p>
+                    Hash: <code>{proof.event_hash}</code>
+                  </p>
+                  <p>Timestamp: {proof.timestamp}</p>
+                  <p>Integrity Status: Verified</p>
                 </section>
               ) : null}
             </>
@@ -976,7 +1210,7 @@ export default function UploadPage() {
                     <p>
                       <strong>event_hash:</strong> <code>{proof.event_hash}</code>{" "}
                       <button className="text-black" onClick={() => void copyText("event_hash", proof.event_hash)}>
-                        Copy
+                        {getCopyLabel("event_hash")}
                       </button>
                     </p>
                     <p>
@@ -991,7 +1225,7 @@ export default function UploadPage() {
                             void copyText("tx_digest", proof.tx_digest ?? proof.txId ?? "")
                           }
                         >
-                          Copy
+                          {getCopyLabel("tx_digest")}
                         </button>
                       ) : null}
                     </p>
@@ -999,7 +1233,7 @@ export default function UploadPage() {
                       <strong>object_id:</strong> <code>{proof.object_id ?? "(none)"}</code>{" "}
                       {proof.object_id ? (
                         <button className="text-black" onClick={() => void copyText("object_id", proof.object_id ?? "")}>
-                          Copy
+                          {getCopyLabel("object_id")}
                         </button>
                       ) : null}
                     </p>
@@ -1021,24 +1255,28 @@ export default function UploadPage() {
                             className="text-black"
                             onClick={() => void copyText("photo_hash", proof.evidence?.photo_hash ?? "")}
                           >
-                            Copy
+                            {getCopyLabel("photo_hash")}
                           </button>
                         </p>
                         <p>
                           <strong>photo_uri:</strong>{" "}
-                          <a href={proof.evidence.photo_uri} target="_blank" rel="noopener noreferrer">
-                            {proof.evidence.photo_uri}
-                          </a>{" "}
+                          {evidenceUrl ? (
+                            <a href={evidenceUrl} target="_blank" rel="noopener noreferrer">
+                              {proof.evidence.photo_uri}
+                            </a>
+                          ) : (
+                            <span>{proof.evidence.photo_uri}</span>
+                          )}{" "}
                           <button
                             className="text-black"
                             onClick={() => void copyText("photo_uri", proof.evidence?.photo_uri ?? "")}
                           >
-                            Copy
+                            {getCopyLabel("photo_uri")}
                           </button>
                         </p>
-                        {toIpfsGatewayUrl(proof.evidence.photo_uri) ? (
+                        {evidenceUrl ? (
                           <a
-                            href={toIpfsGatewayUrl(proof.evidence.photo_uri) ?? undefined}
+                            href={evidenceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-black"
@@ -1053,7 +1291,7 @@ export default function UploadPage() {
                               fontWeight: 600,
                             }}
                           >
-                            Open Evidence (IPFS)
+                            Open Evidence
                           </a>
                         ) : null}
                       </div>
@@ -1147,7 +1385,7 @@ export default function UploadPage() {
                       fontWeight: 600,
                     }}
                   >
-                    Copy JSON
+                    {getCopyLabel("integration JSON", "Copy JSON")}
                   </button>
                 </div>
                 <pre
@@ -1184,7 +1422,7 @@ export default function UploadPage() {
                       fontWeight: 600,
                     }}
                   >
-                    Copy curl
+                    {getCopyLabel("integration curl", "Copy curl")}
                   </button>
                 </div>
                 <pre

@@ -53,14 +53,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function getExplorerBase(network: IotaNetwork): string {
+function getExplorerBase(): string {
+  return "https://explorer.iota.org";
+}
+
+function getExplorerNetworkSuffix(network: IotaNetwork): string {
   if (network === "mainnet") {
-    return "https://explorer.iota.org";
+    return "";
   }
-  if (network === "devnet") {
-    return "https://explorer.iota.org/?network=devnet";
-  }
-  return "https://explorer.iota.org/?network=testnet";
+  return `?network=${encodeURIComponent(network)}`;
 }
 
 function resolveExplorerNetwork(networkOverride?: IotaNetwork): IotaNetwork {
@@ -75,11 +76,11 @@ function resolveExplorerNetwork(networkOverride?: IotaNetwork): IotaNetwork {
 }
 
 export function buildExplorerTx(network: IotaNetwork, txId: string): string {
-  return `${getExplorerBase(network)}/transaction/${txId}`;
+  return `${getExplorerBase()}/txblock/${txId}${getExplorerNetworkSuffix(network)}`;
 }
 
 export function buildExplorerObject(network: IotaNetwork, objectId: string): string {
-  return `${getExplorerBase(network)}/object/${objectId}`;
+  return `${getExplorerBase()}/object/${objectId}${getExplorerNetworkSuffix(network)}`;
 }
 
 function parseHexToBytes(hexValue: string): number[] {

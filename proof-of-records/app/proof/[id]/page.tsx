@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import type { CSSProperties } from "react";
-import { toGatewayUrl } from "@/app/lib/storage/gateway";
+import { resolveEvidenceUrl } from "@/app/lib/storage/gateway";
 import CopyButton from "./CopyButton";
 
 type VerifyProofProject = {
@@ -145,10 +145,7 @@ export default async function ProofPage({
   }
 
   const proof = result.body;
-  const evidenceGatewayUrl =
-    proof.evidence?.photo_uri && proof.evidence.photo_uri.startsWith("ipfs://")
-      ? toGatewayUrl(proof.evidence.photo_uri)
-      : proof.evidence?.photo_uri ?? null;
+  const evidenceGatewayUrl = resolveEvidenceUrl(proof.evidence?.photo_uri);
 
   return (
     <main style={{ minHeight: "100vh", background: "#050505", color: "#ffffff", padding: "32px 16px" }}>
@@ -231,7 +228,7 @@ export default async function ProofPage({
               <CopyButton value={proof.integrity.tx_digest} label="Tx Digest" />
             ) : null}
           </div>
-          <p style={labelStyle()}>Proof ID</p>
+          <p style={labelStyle()}>Object ID</p>
           <p style={valueStyle()}>{proof.integrity.object_id ?? "N/A"}</p>
         </section>
 

@@ -14,7 +14,7 @@ function buildTxBlockUrl(txDigest: string, network?: string) {
   if (net === "mainnet") {
     return `https://explorer.iota.org/txblock/${txDigest}`;
   }
-  return `https://explorer.iota.org/?network=${encodeURIComponent(net)}/txblock/${txDigest}`;
+  return `https://explorer.iota.org/txblock/${txDigest}?network=${encodeURIComponent(net)}`;
 }
 
 function extractTxDigestFromExplorerUrl(urlValue: string): string | null {

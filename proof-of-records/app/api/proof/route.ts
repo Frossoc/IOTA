@@ -455,7 +455,11 @@ export async function POST(req: Request) {
           txId = anchored.txId;
           explorerTx = anchored.explorer.tx;
           explorerObject = anchored.explorer.object ?? undefined;
-          explorerPackage = packageId ? `${networkConfig.explorer.objectBase}${packageId}` : undefined;
+          explorerPackage = packageId
+            ? `${networkConfig.explorer.objectBase}${packageId}${
+                networkConfig.network === "mainnet" ? "" : `?network=${encodeURIComponent(networkConfig.network)}`
+              }`
+            : undefined;
         } catch (error) {
           const message = error instanceof Error ? error.message : "Unknown anchor error";
           anchorError = message;

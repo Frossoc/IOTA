@@ -59,13 +59,13 @@ function readPackageId(network: NetworkInput): string | null {
 function toExplorerBases(network: NetworkInput): { txBase: string; objectBase: string } {
   if (network === "mainnet") {
     return {
-      txBase: "https://explorer.iota.org/transaction/",
+      txBase: "https://explorer.iota.org/txblock/",
       objectBase: "https://explorer.iota.org/object/",
     };
   }
   return {
-    txBase: "https://explorer.iota.org/?network=testnet/transaction/",
-    objectBase: "https://explorer.iota.org/?network=testnet/object/",
+    txBase: "https://explorer.iota.org/txblock/",
+    objectBase: "https://explorer.iota.org/object/",
   };
 }
 

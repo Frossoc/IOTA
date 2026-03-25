@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { findProcessTemplate } from "@/app/lib/templates/processTemplates";
+import AskStrategIADashboard from "./AskStrategIADashboard";
 
 export type DashboardProofRow = {
   id: string;
@@ -201,6 +202,8 @@ export default function DashboardList({ proofs }: DashboardListProps) {
           </table>
         </div>
       )}
+
+      <AskStrategIADashboard />
     </div>
   );
 }

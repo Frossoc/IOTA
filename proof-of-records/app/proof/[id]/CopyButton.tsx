@@ -1,14 +1,40 @@
 "use client";
 
+import { useRef, useState } from "react";
+
 type CopyButtonProps = {
   value: string;
   label: string;
 };
 
 export default function CopyButton({ value, label }: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
+
+  function copyWithFallback(text: string) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  }
+
   async function onCopy() {
     try {
-      await navigator.clipboard.writeText(value);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        copyWithFallback(value);
+      }
+      setCopied(true);
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = window.setTimeout(() => setCopied(false), 1500);
     } catch {
       // no-op for unsupported clipboard contexts
     }
@@ -30,7 +56,7 @@ export default function CopyButton({ value, label }: CopyButtonProps) {
       }}
       aria-label={`Copy ${label}`}
     >
-      Copy
+      {copied ? "Copied" : "Copy"}
     </button>
   );
 }

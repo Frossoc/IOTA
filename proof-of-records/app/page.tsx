@@ -35,6 +35,7 @@ const translations = {
     aboutBiosphereTitle: "About Biosphere Rocks",
     aboutBiosphereText:
       "Proof of Records is part of the Biosphere Rocks infrastructure. Biosphere Rocks is building a new trust layer for real-world data. Instead of relying on platforms or reports, it enables data, actions, and evidence to become verifiable, traceable, and auditable by design. Proof of Records is the first step: it turns files and structured data into deterministic proofs that anyone can verify independently and without trust assumptions.",
+    aboutBiosphereLink: "Explore Biosphere Rocks",
     finalTitle: "Bring verifiable records into the workflow you already use.",
     finalPrimary: "Open Dashboard",
     finalSecondary: "Explore Proof Records",
@@ -83,6 +84,7 @@ const translations = {
     aboutBiosphereTitle: "A propos de Biosphere Rocks",
     aboutBiosphereText:
       "Proof of Records fait partie de l'infrastructure Biosphere Rocks. Biosphere Rocks construit une nouvelle couche de confiance pour les donnees du monde reel. Au lieu de s'appuyer sur des plateformes ou des rapports, cette infrastructure permet aux donnees, aux actions et aux preuves de devenir verifiables, tracables et auditables par conception. Proof of Records est la premiere etape : il transforme les fichiers et les donnees structurees en preuves deterministes que chacun peut verifier de maniere independante et sans hypothese de confiance.",
+    aboutBiosphereLink: "Découvrir Biosphere Rocks",
     finalTitle: "Integrez des preuves verifiables dans les flux que vous utilisez deja.",
     finalPrimary: "Ouvrir le dashboard",
     finalSecondary: "Explorer les preuves",
@@ -131,6 +133,7 @@ const translations = {
     aboutBiosphereTitle: "Sobre Biosphere Rocks",
     aboutBiosphereText:
       "Proof of Records forma parte de la infraestructura Biosphere Rocks. Biosphere Rocks esta construyendo una nueva capa de confianza para los datos del mundo real. En lugar de depender de plataformas o reportes, permite que los datos, las acciones y la evidencia sean verificables, trazables y auditables por diseno. Proof of Records es el primer paso: convierte archivos y datos estructurados en pruebas deterministas que cualquiera puede verificar de forma independiente y sin supuestos de confianza.",
+    aboutBiosphereLink: "Explorar Biosphere Rocks",
     finalTitle: "Lleva registros verificables al flujo de trabajo que ya utilizas.",
     finalPrimary: "Abrir dashboard",
     finalSecondary: "Explorar proofs",
@@ -804,6 +807,24 @@ export default function Home() {
                 {t.aboutBiosphereTitle}
               </p>
               <p style={{ margin: "10px 0 0 0", fontSize: 15, lineHeight: 1.7 }}>{t.aboutBiosphereText}</p>
+              <Link
+                href="https://www.biosphere.rocks"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  marginTop: 14,
+                  textDecoration: "none",
+                  color: "rgba(255,255,255,0.78)",
+                  fontSize: 13,
+                  padding: "9px 12px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(255,255,255,0.16)",
+                }}
+              >
+                {t.aboutBiosphereLink}
+              </Link>
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type {
   ColumnMapping,
@@ -93,8 +93,20 @@ function buildTxBlockUrl(txDigest: string, network = "testnet"): string {
   return `https://explorer.iota.org/txblock/${txDigest}?network=${encodeURIComponent(net)}`;
 }
 
-export default function UploadPage() {
+function UploadTabSync({ onTabChange }: { onTabChange: (tab: DashboardTab) => void }) {
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const nextTab = parseDashboardTab(searchParams.get("tab"));
+    if (nextTab) {
+      onTabChange(nextTab);
+    }
+  }, [onTabChange, searchParams]);
+
+  return null;
+}
+
+export default function UploadPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("create");
 
   const [inputMode, setInputMode] = useState<InputMode>("excel");
@@ -148,13 +160,6 @@ export default function UploadPage() {
   const selectedTemplate = findProcessTemplate(processType);
   const mainnetUiConfirmed =
     selectedNetwork !== "mainnet" || mainnetConfirmInput.trim().toUpperCase() === "MAINNET";
-
-  useEffect(() => {
-    const nextTab = parseDashboardTab(searchParams.get("tab"));
-    if (nextTab) {
-      setActiveTab(nextTab);
-    }
-  }, [searchParams]);
 
   async function parseFile(nextFile: File) {
     setFile(nextFile);
@@ -570,6 +575,9 @@ export default function UploadPage() {
 
   return (
     <main className="relative min-h-screen bg-black text-white">
+      <Suspense fallback={null}>
+        <UploadTabSync onTabChange={setActiveTab} />
+      </Suspense>
       <div className="pointer-events-none absolute left-6 top-4 z-40 opacity-80">
         <Image
           src="/biosphere.jpg"

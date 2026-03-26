@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { VerifyResponse } from "@/app/types/records";
 
@@ -36,8 +36,30 @@ function extractTxDigestFromExplorerUrl(urlValue: string): string | null {
   return null;
 }
 
-export default function VerifyPage() {
+function VerifyQuerySync(props: {
+  onExpectedEventHashChange: (value: string) => void;
+  onObjectIdChange: (value: string) => void;
+  onTxDigestChange: (value: string) => void;
+}) {
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const expected = searchParams.get("expected_event_hash") ?? "";
+    const objectFromQuery = searchParams.get("object_id") ?? searchParams.get("objectId") ?? "";
+    const txFromQuery = searchParams.get("tx_digest") ?? searchParams.get("txId") ?? "";
+    props.onExpectedEventHashChange(expected);
+    if (objectFromQuery) {
+      props.onObjectIdChange(objectFromQuery);
+    }
+    if (txFromQuery) {
+      props.onTxDigestChange(txFromQuery);
+    }
+  }, [props, searchParams]);
+
+  return null;
+}
+
+export default function VerifyPage() {
 
   const [expectedEventHash, setExpectedEventHash] = useState("");
   const [canonicalString, setCanonicalString] = useState("");
@@ -102,19 +124,6 @@ export default function VerifyPage() {
   }, []);
 
   useEffect(() => {
-    const expected = searchParams.get("expected_event_hash") ?? "";
-    const objectFromQuery = searchParams.get("object_id") ?? searchParams.get("objectId") ?? "";
-    const txFromQuery = searchParams.get("tx_digest") ?? searchParams.get("txId") ?? "";
-    setExpectedEventHash(expected);
-    if (objectFromQuery) {
-      setObjectId(objectFromQuery);
-    }
-    if (txFromQuery) {
-      setTxDigest(txFromQuery);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
     loadLastProof();
   }, [loadLastProof]);
 
@@ -168,6 +177,13 @@ export default function VerifyPage() {
 
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+      <Suspense fallback={null}>
+        <VerifyQuerySync
+          onExpectedEventHashChange={setExpectedEventHash}
+          onObjectIdChange={setObjectId}
+          onTxDigestChange={setTxDigest}
+        />
+      </Suspense>
       <h1 style={{ fontSize: 28, fontWeight: 800 }}>Verify Proof</h1>
       <p style={{ marginTop: 8 }}>
         Verify local hash consistency and compare against the on-chain Proof object.

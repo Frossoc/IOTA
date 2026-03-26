@@ -14,6 +14,12 @@ export async function GET(req: Request) {
 
   const result = await readProofById(id);
   if (!result.ok) {
+    if (result.error === "supabase_not_configured") {
+      return NextResponse.json(
+        { ok: false, error: "Persistence is not configured in this environment." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ ok: false, error: "Proof lookup failed" }, { status: 500 });
   }
 

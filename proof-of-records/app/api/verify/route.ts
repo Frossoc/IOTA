@@ -53,6 +53,7 @@ async function verifyPayload(payload: VerifyRequest) {
   let matchOnchain: boolean | null = null;
   let explorerTx: string | null = null;
   let explorerObject: string | null = null;
+  const warnings: string[] = [];
   const networkConfig = resolveIotaNetworkConfig({
     requestedNetwork: payload.network,
     mainnetConfirmToken: payload.mainnet_confirm_token,
@@ -61,6 +62,10 @@ async function verifyPayload(payload: VerifyRequest) {
     process.env.IOTA_ANCHOR_ONCHAIN === "true" &&
     Boolean(networkConfig.packageId) &&
     Boolean(networkConfig.rpcUrl);
+
+  if (!onchainEnabled && ((typeof objectId === "string" && objectId.trim().length > 0) || (typeof txDigest === "string" && txDigest.trim().length > 0))) {
+    warnings.push("On-chain verification is unavailable in this environment. Local hash verification still works.");
+  }
 
   if (
     onchainEnabled &&
@@ -130,6 +135,7 @@ async function verifyPayload(payload: VerifyRequest) {
         object: explorerObject,
         package: null,
       },
+      ...(warnings.length > 0 ? { warnings } : {}),
       ...(networkConfig.warning ? { warning: networkConfig.warning } : {}),
     },
   };

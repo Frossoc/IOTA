@@ -127,6 +127,10 @@ export default async function ProofPage({
   }
 
   if (!result.body || !result.body.ok) {
+    const message =
+      result.body && "error" in result.body && result.body.error === "Persistence is not configured in this environment."
+        ? "This environment is running without persistence credentials, so stored public proofs are unavailable."
+        : "An unexpected error occurred while loading this proof.";
     return (
       <main
         style={{ minHeight: "100vh", background: "#050505", color: "#ffffff", padding: "32px 16px" }}
@@ -137,7 +141,7 @@ export default async function ProofPage({
           </p>
           <h1 style={{ margin: 0, fontSize: 28, marginBottom: 12 }}>Verification Unavailable</h1>
           <p style={{ color: "#d1d5db", marginTop: 0 }}>
-            An unexpected error occurred while loading this proof.
+            {message}
           </p>
         </div>
       </main>

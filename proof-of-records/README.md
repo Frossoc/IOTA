@@ -18,12 +18,30 @@ Open [http://localhost:3000](http://localhost:3000)
 To test the project quickly:
 
 1. Run the app locally
-2. Upload a structured dataset (JSON / CSV)
-3. The system generates a deterministic hash
-4. The hash is anchored on IOTA testnet
-5. You can verify the transaction in the IOTA Explorer
+2. Open `/upload`
+3. Upload a structured dataset (JSON / CSV)
+4. Generate a proof
+5. Review the resulting hash, summary, and technical details
+6. If IOTA credentials are configured, verify the transaction in the IOTA Explorer
 
-No complex setup required beyond environment variables.
+No complex setup is required beyond environment variables.
+
+## Demo Mode
+
+The project can be reviewed with or without full credentials.
+
+What works without credentials:
+
+- landing page, `/upload`, `/verify`, and `/dashboard`
+- local proof generation and deterministic hash creation
+- local verification flows
+- app startup and build
+
+What requires credentials:
+
+- IOTA credentials for on-chain anchoring
+- Supabase credentials for stored proofs, dashboard persistence, and public proof pages
+- `PINATA_JWT` for photo evidence upload
 
 ## Environment Setup
 
@@ -61,6 +79,25 @@ Notes:
 - advanced mainnet and internal-only settings are omitted on purpose
 - request limits remain configurable through the byte-based variables shown in `.env.example`
 
+## Running Without Credentials
+
+The app is designed to remain usable even if some secrets are not configured.
+
+What still works without full credentials:
+
+- landing page, `/upload`, `/verify`, and `/dashboard`
+- local proof generation and deterministic hash creation
+- local verification flows
+- app startup and build
+
+What requires real credentials for full behavior:
+
+- IOTA credentials for on-chain anchoring
+- Supabase credentials for stored proofs, dashboard persistence, and public proof pages
+- `PINATA_JWT` for photo evidence upload
+
+When these credentials are missing, the app degrades gracefully and shows warnings instead of failing hard where possible.
+
 ## Hackathon Scope
 
 This repository contains multiple experiments under the broader IOTA workspace.
@@ -79,6 +116,14 @@ Primary routes to review:
 ## Overview
 
 Proof of Records is a Next.js App Router + TypeScript project for turning spreadsheets or JSON datasets into deterministic proofs that can be hashed, persisted, published, and anchored on IOTA testnet. It includes public proof pages, downloadable bundles, PDF summaries, Supabase-backed persistence, API key protection, and optional Phase 10 Merkle proof units.
+
+## How It Works
+
+1. Upload structured records from Excel or JSON
+2. Canonicalize the dataset into a deterministic payload
+3. Generate a cryptographic hash for the record set
+4. Optionally anchor the proof on IOTA testnet
+5. Review, export, and verify the proof through the app or API
 
 ## Key Features
 
@@ -121,6 +166,16 @@ The app uses IOTA as the on-chain integrity anchor:
   - Supabase `public.proof_of_records` for proof metadata
 - On-chain:
   - IOTA Move package for proof registration
+
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
+- IOTA testnet + Move package integration
+- Supabase for persistence and API-key-backed access controls
+- Pinata / IPFS for bundle and evidence storage
+- `pdf-lib` for summary export
+- `exceljs` for spreadsheet ingestion
 
 ## Demo Routes
 

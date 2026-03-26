@@ -364,34 +364,30 @@ export async function POST(req: Request) {
       }
 
       if (!process.env.PINATA_JWT || process.env.PINATA_JWT.trim().length === 0) {
-        return respond(
-          { error: "PINATA_JWT is required when evidence.photo_base64 is provided" },
-          400,
-          { errorCode: "missing_pinata_jwt" }
-        );
-      }
+        warnings.push("Photo evidence skipped: PINATA_JWT is not configured.");
+      } else {
+        try {
+          const bytes = decodeBase64Payload(payload.evidence.photo_base64);
+          const photo_hash = createHash("sha256").update(bytes).digest("hex");
+          const contentTypeValue =
+            payload.evidence.content_type && payload.evidence.content_type.trim().length > 0
+              ? payload.evidence.content_type.trim()
+              : "application/octet-stream";
+          const filename =
+            payload.evidence.filename && payload.evidence.filename.trim().length > 0
+              ? payload.evidence.filename.trim()
+              : "evidence.jpg";
 
-      try {
-        const bytes = decodeBase64Payload(payload.evidence.photo_base64);
-        const photo_hash = createHash("sha256").update(bytes).digest("hex");
-        const contentTypeValue =
-          payload.evidence.content_type && payload.evidence.content_type.trim().length > 0
-            ? payload.evidence.content_type.trim()
-            : "application/octet-stream";
-        const filename =
-          payload.evidence.filename && payload.evidence.filename.trim().length > 0
-            ? payload.evidence.filename.trim()
-            : "evidence.jpg";
+          const uploadInput = new Blob([new Uint8Array(bytes)], { type: contentTypeValue });
+          const uploadedPhoto = await uploadFileToPinata(uploadInput, filename);
 
-        const uploadInput = new Blob([new Uint8Array(bytes)], { type: contentTypeValue });
-        const uploadedPhoto = await uploadFileToPinata(uploadInput, filename);
-
-        evidence = {
-          photo_hash,
-          photo_uri: uploadedPhoto.uri,
-        };
-      } catch {
-        return respond({ error: "Failed to process or upload photo evidence" }, 502, { errorCode: "photo_upload_failed" });
+          evidence = {
+            photo_hash,
+            photo_uri: uploadedPhoto.uri,
+          };
+        } catch {
+          warnings.push("Photo evidence upload failed and was skipped.");
+        }
       }
     }
 

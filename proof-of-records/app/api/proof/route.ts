@@ -316,25 +316,21 @@ export async function POST(req: Request) {
 
     if (photo instanceof File) {
       if (!process.env.PINATA_JWT) {
-        return respond(
-          { error: "PINATA_JWT is required when photo evidence is provided" },
-          400,
-          { errorCode: "missing_pinata_jwt" }
-        );
-      }
-
-      try {
-        const photoBytes = await photo.arrayBuffer();
-        const photo_hash = createHash("sha256")
-          .update(NodeBuffer.from(photoBytes))
-          .digest("hex");
-        const uploadedPhoto = await uploadFileToPinata(photo, photo.name || "evidence.jpg");
-        evidence = {
-          photo_hash,
-          photo_uri: uploadedPhoto.uri,
-        };
-      } catch {
-        return respond({ error: "Failed to upload photo evidence" }, 502, { errorCode: "photo_upload_failed" });
+        warnings.push("Photo evidence skipped: PINATA_JWT is not configured.");
+      } else {
+        try {
+          const photoBytes = await photo.arrayBuffer();
+          const photo_hash = createHash("sha256")
+            .update(NodeBuffer.from(photoBytes))
+            .digest("hex");
+          const uploadedPhoto = await uploadFileToPinata(photo, photo.name || "evidence.jpg");
+          evidence = {
+            photo_hash,
+            photo_uri: uploadedPhoto.uri,
+          };
+        } catch {
+          warnings.push("Photo evidence upload failed and was skipped.");
+        }
       }
     }
 

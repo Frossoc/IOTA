@@ -41,7 +41,10 @@ function parseProofRow(value: unknown): DashboardProofRow | null {
 async function loadProofs(): Promise<{ proofs: DashboardProofRow[]; error: string | null }> {
   const client = createSupabaseServerClient();
   if (!client) {
-    return { proofs: [], error: "Supabase is not configured." };
+    return {
+      proofs: [],
+      error: "Persistence is not configured in this environment. The dashboard remains available, but stored proofs will only appear when Supabase credentials are provided.",
+    };
   }
 
   const { data, error } = await client

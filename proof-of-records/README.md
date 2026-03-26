@@ -1,6 +1,81 @@
 # Proof of Records
 Turn operational datasets into anchored integrity proofs with optional record-level Merkle verification.
 
+## Quick Start
+
+```bash
+git clone https://github.com/Frossoc/IOTA.git
+cd IOTA/proof-of-records
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+## Quick Review (for judges)
+
+To test the project quickly:
+
+1. Run the app locally
+2. Upload a structured dataset (JSON / CSV)
+3. The system generates a deterministic hash
+4. The hash is anchored on IOTA testnet
+5. You can verify the transaction in the IOTA Explorer
+
+No complex setup required beyond environment variables.
+
+## Environment Setup
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill in the minimum required values in `.env.local`:
+
+- `IOTA_PRIVATE_KEY`
+  - wallet used to anchor proofs on IOTA testnet
+- `IOTA_PACKAGE_ID`
+  - deployed Move package id for the proof contract
+- `SUPABASE_URL`
+  - Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY`
+  - backend-only Supabase key
+- `DATABASE_URL`
+  - Postgres connection string for persistence
+- `NEXT_PUBLIC_GATEWAY_URL`
+  - HTTP gateway used to open IPFS evidence links in the browser
+
+Optional:
+
+- `PINATA_JWT`
+  - only required if you want photo evidence uploads to work
+- `IOTA_ISSUER_ADDRESS`
+  - optional issuer/source address shown in proof metadata
+- `API_KEY_AUTH_MODE`
+  - keep `soft` for easy local demo usage
+
+Notes:
+
+- `.env.example` is intentionally simplified for hackathon review
+- advanced mainnet and internal-only settings are omitted on purpose
+- request limits remain configurable through the byte-based variables shown in `.env.example`
+
+## Hackathon Scope
+
+This repository contains multiple experiments under the broader IOTA workspace.
+For hackathon review, run and evaluate only:
+
+- `/proof-of-records`
+
+Primary routes to review:
+
+- `/`
+- `/upload`
+- `/verify`
+- `/dashboard`
+- `/proof/[id]`
+
 ## Overview
 
 Proof of Records is a Next.js App Router + TypeScript project for turning spreadsheets or JSON datasets into deterministic proofs that can be hashed, persisted, published, and anchored on IOTA testnet. It includes public proof pages, downloadable bundles, PDF summaries, Supabase-backed persistence, API key protection, and optional Phase 10 Merkle proof units.
@@ -46,35 +121,6 @@ The app uses IOTA as the on-chain integrity anchor:
   - Supabase `public.proof_of_records` for proof metadata
 - On-chain:
   - IOTA Move package for proof registration
-
-## Setup
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Copy the example env file:
-
-```bash
-cp .env.example .env.local
-```
-
-3. Fill in real values for:
-
-- IOTA RPC, package id, signer, issuer address
-- Pinata JWT and gateway
-- Supabase URL, service role key, and database URL
-- test API key
-
-4. Start the app:
-
-```bash
-npm run dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000)
 
 ## Demo Routes
 

@@ -10,11 +10,12 @@ type Lang = "en" | "fr" | "es";
 const translations = {
   en: {
     heroTitle: "Proof of Records",
-    heroTagline: "Turn operational data into verifiable records anchored on IOTA",
+    heroHeadline: "Verifiable data, not just stored data.",
+    heroTagline: "Proof of Records",
     heroDescription:
-      "From spreadsheets and JSON to independently verifiable proof, built for traceability, auditability, and trust.",
+      "Proof of Records turns structured data into verifiable, time-consistent records that can be trusted across organizations.",
     heroDifferentiator: "Most systems certify files. Proof of Records certifies the underlying data.",
-    ctaPrimary: "Launch App",
+    ctaPrimary: "Explore how data becomes verifiable",
     ctaSecondary: "View Demo",
     problemTitle: "The Problem",
     problemText:
@@ -53,7 +54,7 @@ const translations = {
     finalTitle: "Bring verifiable records into the workflow you already use.",
     finalPrimary: "Open Dashboard",
     finalSecondary: "Explore Proof Records",
-    biosphereLine: "Part of the Biosphere Rocks ecosystem",
+    biosphereLine: "Built for distributed ecosystems like IOTA.",
     hackathonLine: "Originated during the MasterZ × IOTA Hackathon",
     biosphereFooter: "Built as part of the Biosphere Rocks infrastructure",
     navProofs: "Proof Records",
@@ -75,12 +76,13 @@ const translations = {
   },
   fr: {
     heroTitle: "Proof of Records",
-    heroTagline: "Transformez les donnees operationnelles en enregistrements verifiables ancres sur IOTA",
+    heroHeadline: "Des données vérifiables, pas seulement stockées.",
+    heroTagline: "Proof of Records",
     heroDescription:
-      "Des feuilles de calcul et du JSON vers une preuve verifiable independamment, concue pour la tracabilite, l'auditabilite et la confiance.",
+      "Proof of Records transforme des données structurées en enregistrements vérifiables, cohérents dans le temps, auxquels plusieurs organisations peuvent se fier.",
     heroDifferentiator:
       "La plupart des systemes certifient des fichiers. Proof of Records certifie les donnees sous-jacentes.",
-    ctaPrimary: "Ouvrir l'application",
+    ctaPrimary: "Explorer comment les données deviennent vérifiables",
     ctaSecondary: "Voir la demo",
     problemTitle: "Le probleme",
     problemText:
@@ -119,7 +121,7 @@ const translations = {
     finalTitle: "Integrez des preuves verifiables dans les flux que vous utilisez deja.",
     finalPrimary: "Ouvrir le dashboard",
     finalSecondary: "Explorer les preuves",
-    biosphereLine: "Fait partie de l'ecosysteme Biosphere Rocks",
+    biosphereLine: "Conçu pour des écosystèmes distribués comme IOTA.",
     hackathonLine: "Conçu pendant le MasterZ × IOTA Hackathon",
     biosphereFooter: "Construit dans l'infrastructure Biosphere Rocks",
     navProofs: "Registre des preuves",
@@ -141,12 +143,13 @@ const translations = {
   },
   es: {
     heroTitle: "Proof of Records",
-    heroTagline: "Convierte datos operativos en registros verificables anclados en IOTA",
+    heroHeadline: "Datos verificables, no solo almacenados.",
+    heroTagline: "Proof of Records",
     heroDescription:
-      "De hojas de calculo y JSON a proof verificable de forma independiente, creada para trazabilidad, auditabilidad y confianza.",
+      "Proof of Records convierte datos estructurados en registros verificables, consistentes en el tiempo, en los que distintas organizaciones pueden confiar.",
     heroDifferentiator:
       "La mayoria de los sistemas certifican archivos. Proof of Records certifica los datos subyacentes.",
-    ctaPrimary: "Abrir aplicacion",
+    ctaPrimary: "Explorar cómo los datos se vuelven verificables",
     ctaSecondary: "Ver demo",
     problemTitle: "El problema",
     problemText:
@@ -185,7 +188,7 @@ const translations = {
     finalTitle: "Lleva registros verificables al flujo de trabajo que ya utilizas.",
     finalPrimary: "Abrir dashboard",
     finalSecondary: "Explorar proofs",
-    biosphereLine: "Parte del ecosistema Biosphere Rocks",
+    biosphereLine: "Creado para ecosistemas distribuidos como IOTA.",
     hackathonLine: "Creado durante el MasterZ × IOTA Hackathon",
     biosphereFooter: "Construido como parte de la infraestructura Biosphere Rocks",
     navProofs: "Registros de proof",
@@ -521,7 +524,7 @@ export default function Home() {
                 letterSpacing: -2,
               }}
             >
-              {t.heroTitle}
+              {t.heroHeadline}
             </h1>
             <p
               style={{

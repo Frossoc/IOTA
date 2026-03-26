@@ -31,6 +31,15 @@ const translations = {
     useCases: "Use Cases",
     useCasesText:
       "Designed for sectors where structured records need to remain verifiable across time, organizations, and stakeholders.",
+    useCasesHint: "Click each use case to see a practical example.",
+    pilotsTitle: "Real-world validation",
+    pilotsSubtitle:
+      "Proof of Records is already being explored in real-world field data workflows.",
+    pilotsContext:
+      "In collaboration with Fundación Banco de Residuos Argentina, Biosphere is exploring how real field data from waste recovery operations can power the Waste Bank World initiative through verifiable data infrastructure.",
+    pilotsDescriptionTwo:
+      "Waste Bank World is an early-stage initiative exploring impact-linked systems in the IOTA ecosystem, where verifiable data infrastructure is a key component.",
+    pilotsLink: "Learn more about Waste Bank World ->",
     trustTitle: "Built for high-integrity records, not blockchain theater.",
     trustText:
       "Built with Biosphere infrastructure, anchored on IOTA testnet, and designed for verifiable operational data that needs to be checked by organizations, partners, and the public.",
@@ -45,6 +54,7 @@ const translations = {
     finalPrimary: "Open Dashboard",
     finalSecondary: "Explore Proof Records",
     biosphereLine: "Part of the Biosphere Rocks ecosystem",
+    hackathonLine: "Originated during the MasterZ × IOTA Hackathon",
     biosphereFooter: "Built as part of the Biosphere Rocks infrastructure",
     navProofs: "Proof Records",
     navLaunch: "Launch App",
@@ -87,6 +97,15 @@ const translations = {
     useCases: "Cas d'usage",
     useCasesText:
       "Concu pour les secteurs ou les donnees structurees doivent rester verifiables dans le temps et entre plusieurs acteurs.",
+    useCasesHint: "Cliquez sur chaque cas d'usage pour voir un exemple concret.",
+    pilotsTitle: "Validation en conditions réelles",
+    pilotsSubtitle:
+      "Proof of Records est déjà exploré dans des workflows réels de données terrain.",
+    pilotsContext:
+      "En collaboration avec Fundación Banco de Residuos Argentina, Biosphere explore comment des données terrain réelles issues des opérations de récupération des déchets peuvent alimenter l’initiative Waste Bank World grâce à une infrastructure de données vérifiables.",
+    pilotsDescriptionTwo:
+      "Waste Bank World est une initiative en phase précoce qui explore des systèmes liés à l’impact dans l’écosystème IOTA, où une infrastructure de données vérifiables constitue un composant clé.",
+    pilotsLink: "En savoir plus sur Waste Bank World ->",
     trustTitle: "Concu pour des enregistrements a haute integrite.",
     trustText:
       "Construit avec l'infrastructure Biosphere, ancre sur IOTA testnet, et pense pour des donnees operationnelles verifiables par des organisations, partenaires et publics.",
@@ -101,6 +120,7 @@ const translations = {
     finalPrimary: "Ouvrir le dashboard",
     finalSecondary: "Explorer les preuves",
     biosphereLine: "Fait partie de l'ecosysteme Biosphere Rocks",
+    hackathonLine: "Conçu pendant le MasterZ × IOTA Hackathon",
     biosphereFooter: "Construit dans l'infrastructure Biosphere Rocks",
     navProofs: "Registre des preuves",
     navLaunch: "Ouvrir l'application",
@@ -143,6 +163,15 @@ const translations = {
     useCases: "Casos de uso",
     useCasesText:
       "Pensado para sectores donde los registros estructurados deben seguir siendo verificables en el tiempo y entre organizaciones.",
+    useCasesHint: "Haz clic en cada caso de uso para ver un ejemplo práctico.",
+    pilotsTitle: "Validación en el mundo real",
+    pilotsSubtitle:
+      "Proof of Records ya se está explorando en flujos reales de datos de campo.",
+    pilotsContext:
+      "En colaboración con Fundación Banco de Residuos Argentina, Biosphere está explorando cómo datos reales de campo procedentes de operaciones de recuperación de residuos pueden impulsar la iniciativa Waste Bank World mediante infraestructura de datos verificables.",
+    pilotsDescriptionTwo:
+      "Waste Bank World es una iniciativa en etapa temprana que explora sistemas vinculados al impacto dentro del ecosistema IOTA, donde una infraestructura de datos verificables es un componente clave.",
+    pilotsLink: "Conoce más sobre Waste Bank World ->",
     trustTitle: "Disenado para registros de alta integridad.",
     trustText:
       "Construido con infraestructura Biosphere, anclado en IOTA testnet, y disenado para datos operativos verificables por organizaciones, aliados y publico.",
@@ -157,6 +186,7 @@ const translations = {
     finalPrimary: "Abrir dashboard",
     finalSecondary: "Explorar proofs",
     biosphereLine: "Parte del ecosistema Biosphere Rocks",
+    hackathonLine: "Creado durante el MasterZ × IOTA Hackathon",
     biosphereFooter: "Construido como parte de la infraestructura Biosphere Rocks",
     navProofs: "Registros de proof",
     navLaunch: "Abrir aplicacion",
@@ -252,11 +282,73 @@ const featureCards = [
   },
 ] satisfies Array<{ title: Record<Lang, string>; description: Record<Lang, string> }>;
 
-const useCases = {
-  en: ["Waste traceability", "ESG reporting", "Compliance logs", "Media / news integrity", "Supply chain event"],
-  fr: ["Traçabilite des dechets", "Reporting ESG", "Journaux de conformite", "Integrite media / info", "Evenement supply chain"],
-  es: ["Trazabilidad de residuos", "Reportes ESG", "Logs de cumplimiento", "Integridad de medios / noticias", "Evento supply chain"],
-} satisfies Record<Lang, string[]>;
+const useCases = [
+  {
+    id: "waste",
+    title: {
+      en: "Waste traceability",
+      fr: "Traçabilité des déchets",
+      es: "Trazabilidad de residuos",
+    },
+    example: {
+      en: "Turn field collection logs into verifiable records that can be checked later by partners, auditors, or impact programs.",
+      fr: "Transformez les journaux de collecte terrain en enregistrements vérifiables, contrôlables plus tard par des partenaires, des auditeurs ou des programmes d'impact.",
+      es: "Convierte los registros de recolección en campo en registros verificables que luego puedan revisar socios, auditores o programas de impacto.",
+    },
+  },
+  {
+    id: "esg",
+    title: {
+      en: "ESG reporting",
+      fr: "Reporting ESG",
+      es: "Reportes ESG",
+    },
+    example: {
+      en: "Structure sustainability-related operational data into timestamped records that support reporting and external review.",
+      fr: "Structurez les données opérationnelles liées à la durabilité en enregistrements horodatés qui soutiennent le reporting et la revue externe.",
+      es: "Estructura datos operativos vinculados a sostenibilidad en registros con timestamp que respalden reportes y revisión externa.",
+    },
+  },
+  {
+    id: "compliance",
+    title: {
+      en: "Compliance logs",
+      fr: "Journaux de conformité",
+      es: "Logs de cumplimiento",
+    },
+    example: {
+      en: "Preserve process logs in a format that can be independently verified over time.",
+      fr: "Conservez les journaux de processus dans un format qui peut être vérifié de manière indépendante dans le temps.",
+      es: "Conserva logs de procesos en un formato que pueda verificarse de manera independiente con el tiempo.",
+    },
+  },
+  {
+    id: "media",
+    title: {
+      en: "Media / news integrity",
+      fr: "Intégrité médias / actualités",
+      es: "Integridad de medios / noticias",
+    },
+    example: {
+      en: "Create verifiable records for source data, evidence, or publication-related assets to reduce dispute risk.",
+      fr: "Créez des enregistrements vérifiables pour les données source, les preuves ou les actifs liés à une publication afin de réduire les risques de contestation.",
+      es: "Crea registros verificables para datos fuente, evidencia o activos vinculados a publicaciones para reducir el riesgo de disputa.",
+    },
+  },
+  {
+    id: "supply",
+    title: {
+      en: "Supply chain event",
+      fr: "Événement supply chain",
+      es: "Evento supply chain",
+    },
+    example: {
+      en: "Turn operational events such as shipments, checkpoints, or delivery records into verifiable data entries.",
+      fr: "Transformez des événements opérationnels comme des expéditions, checkpoints ou livraisons en entrées de données vérifiables.",
+      es: "Convierte eventos operativos como envíos, checkpoints o registros de entrega en entradas de datos verificables.",
+    },
+  },
+] satisfies Array<{ id: string; title: Record<Lang, string>; example: Record<Lang, string> }>;
 
 const steps = [
   {
@@ -353,6 +445,8 @@ function sectionTitle(eyebrow: string, title: string, description: string) {
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("en");
+  const [isHackathonVideoOpen, setIsHackathonVideoOpen] = useState(false);
+  const [openUseCaseId, setOpenUseCaseId] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("lang");
@@ -461,6 +555,80 @@ export default function Home() {
             >
               {t.heroDifferentiator}
             </p>
+
+            <div
+              style={{
+                marginTop: 18,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 12px",
+                borderRadius: 18,
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.03)",
+                maxWidth: "100%",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsHackathonVideoOpen(true)}
+                style={{
+                  appearance: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  background: "transparent",
+                  width: "clamp(72px, 16vw, 104px)",
+                  aspectRatio: "16 / 9",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  transition: "transform 160ms ease, box-shadow 160ms ease",
+                }}
+                aria-label="Open hackathon video"
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(0,0,0,0.28)",
+                    padding: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <video
+                    src="/hackathon.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      borderRadius: 10,
+                      background: "#0b0b0b",
+                    }}
+                  />
+                </div>
+              </button>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#c7cbd4",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {t.hackathonLine}
+              </p>
+            </div>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 30 }}>
               <Link
@@ -620,6 +788,93 @@ export default function Home() {
           {sectionTitle(t.solutionTitle, t.solutionTitle, t.solutionText)}
         </section>
 
+        <section style={{ padding: "0 0 54px 0" }}>
+          <div
+            style={{
+              maxWidth: 760,
+              display: "grid",
+              gap: 18,
+              padding: "10px 0 4px 0",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                color: "#9ca3af",
+                fontSize: 12,
+                letterSpacing: 1.8,
+                textTransform: "uppercase",
+              }}
+            >
+              {t.pilotsTitle}
+            </p>
+            <p
+              style={{
+                margin: 0,
+                color: "#f3f4f6",
+                fontSize: "clamp(22px, 3vw, 30px)",
+                lineHeight: 1.25,
+                fontWeight: 600,
+              }}
+            >
+              {t.pilotsSubtitle}
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                justifyItems: "start",
+                padding: "8px 0",
+              }}
+            >
+              <Image
+                src="/waste-bank-world.png"
+                alt="Waste Bank World"
+                width={180}
+                height={64}
+                style={{ width: "100%", height: "auto", maxWidth: 180, objectFit: "contain" }}
+              />
+            </div>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#c7cbd4",
+                fontSize: 15,
+                lineHeight: 1.75,
+              }}
+            >
+              {t.pilotsContext}
+            </p>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#c7cbd4",
+                fontSize: 15,
+                lineHeight: 1.75,
+              }}
+            >
+              {t.pilotsDescriptionTwo}
+            </p>
+
+            <div>
+              <Link
+                href="https://wastebank.world/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: "none",
+                  color: "#9fb0c9",
+                  fontSize: 13,
+                }}
+              >
+                {t.pilotsLink}
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section style={{ padding: "0 0 80px 0" }}>
           {sectionTitle(t.notarizationTitle, t.notarizationTitle, t.notarizationText)}
         </section>
@@ -688,22 +943,50 @@ export default function Home() {
         <section style={{ padding: "0 0 84px 0" }}>
           {sectionTitle(t.useCases, t.useCases, t.useCasesText)}
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 26 }}>
-            {useCases[lang].map((item) => (
-              <div
-                key={item}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.03)",
-                  color: "#eef2f7",
-                  fontSize: 15,
-                }}
-              >
-                {item}
-              </div>
-            ))}
+          <p style={{ margin: "12px 0 0 0", color: "#9ca3af", fontSize: 14 }}>{t.useCasesHint}</p>
+
+          <div style={{ display: "grid", gap: 12, marginTop: 22, maxWidth: 860 }}>
+            {useCases.map((item) => {
+              const isOpen = openUseCaseId === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setOpenUseCaseId((current) => (current === item.id ? null : item.id))}
+                  style={{
+                    appearance: "none",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: isOpen ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)",
+                    color: "#eef2f7",
+                    borderRadius: 20,
+                    padding: "16px 18px",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "background 160ms ease, border-color 160ms ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>{item.title[lang]}</span>
+                    <span style={{ color: "#9ca3af", fontSize: 18, lineHeight: 1 }}>{isOpen ? "−" : "+"}</span>
+                  </div>
+
+                  {isOpen ? (
+                    <p
+                      style={{
+                        margin: "12px 0 0 0",
+                        color: "#c7cbd4",
+                        fontSize: 14,
+                        lineHeight: 1.7,
+                        maxWidth: 720,
+                      }}
+                    >
+                      {item.example[lang]}
+                    </p>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
         </section>
 
@@ -830,6 +1113,95 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {isHackathonVideoOpen ? (
+        <div
+          onClick={() => setIsHackathonVideoOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 70,
+            background: "rgba(0,0,0,0.72)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "min(520px, calc(100vw - 24px))",
+              borderRadius: 24,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(10,10,10,0.96)",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.45)",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setIsHackathonVideoOpen(false)}
+              style={{
+                appearance: "none",
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 2,
+                width: 34,
+                height: 34,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(0,0,0,0.48)",
+                color: "#f3f4f6",
+                borderRadius: 999,
+                cursor: "pointer",
+                fontSize: 18,
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Close"
+            >
+              ×
+            </button>
+
+            <div style={{ padding: 16 }}>
+              <p style={{ margin: "0 48px 12px 0", color: "#d1d5db", fontSize: 14, lineHeight: 1.5 }}>{t.hackathonLine}</p>
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "9 / 16",
+                  borderRadius: 18,
+                  background: "rgba(255,255,255,0.03)",
+                  padding: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <video
+                  src="/hackathon.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    borderRadius: 14,
+                    background: "#050505",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

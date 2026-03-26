@@ -25,7 +25,7 @@ const modalCopy = {
     ecosystemTitle: "Part of the Biosphere Rocks infrastructure.",
     ecosystemBody:
       "Available as a standalone product or as an integrated layer inside StrategIA Impact Agent.",
-    openDashboard: "Open Dashboard",
+    openDashboard: "Open App",
     exploreServices: "Explore Biosphere Services",
   },
   fr: {
@@ -42,7 +42,7 @@ const modalCopy = {
     ecosystemTitle: "Fait partie de l’infrastructure Biosphere Rocks.",
     ecosystemBody:
       "Disponible comme produit autonome ou comme couche intégrée dans StrategIA Impact Agent.",
-    openDashboard: "Ouvrir le dashboard",
+    openDashboard: "Ouvrir l'application",
     exploreServices: "Explorer les services Biosphere",
   },
   es: {
@@ -59,7 +59,7 @@ const modalCopy = {
     ecosystemTitle: "Forma parte de la infraestructura de Biosphere Rocks.",
     ecosystemBody:
       "Disponible como producto independiente o como capa integrada dentro de StrategIA Impact Agent.",
-    openDashboard: "Abrir el dashboard",
+    openDashboard: "Abrir la app",
     exploreServices: "Explorar servicios de Biosphere",
   },
 } satisfies Record<NavbarLang, { eyebrow: string; title: string; subtitle: string; description: string; pricing: Array<{ title: string; price: string; bullets: string[] }>; ecosystemTitle: string; ecosystemBody: string; openDashboard: string; exploreServices: string }>;
@@ -97,21 +97,25 @@ export default function ProofOfRecordsModal({ lang, open, onClose }: ProofOfReco
         zIndex: 80,
         background: "rgba(0,0,0,0.68)",
         backdropFilter: "blur(6px)",
-        padding: "24px 16px",
+        padding: "12px",
         display: "grid",
         placeItems: "center",
+        overflowY: "auto",
       }}
     >
       <div
         onClick={(event) => event.stopPropagation()}
         style={{
-          width: "min(760px, 100%)",
+          width: "min(760px, calc(100vw - 24px))",
+          maxHeight: "90vh",
           borderRadius: 28,
           border: "1px solid rgba(255,255,255,0.1)",
           background: "#0a0a0a",
           boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
-          padding: 24,
           color: "#ffffff",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -120,6 +124,11 @@ export default function ProofOfRecordsModal({ lang, open, onClose }: ProofOfReco
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: 16,
+            padding: "18px 18px 0 18px",
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            background: "#0a0a0a",
           }}
         >
           <div style={{ maxWidth: 560 }}>
@@ -162,93 +171,119 @@ export default function ProofOfRecordsModal({ lang, open, onClose }: ProofOfReco
           </button>
         </div>
 
-        <p style={{ margin: "16px 0 0 0", color: "#b6bcc8", fontSize: 15, lineHeight: 1.75, maxWidth: 620 }}>
-          {copy.description}
-        </p>
-
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 14,
-            marginTop: 22,
+            overflowY: "auto",
+            padding: "16px 18px 18px 18px",
           }}
         >
-          {copy.pricing.map((tier) => (
+          <p style={{ margin: "0 0 0 0", color: "#b6bcc8", fontSize: 15, lineHeight: 1.75, maxWidth: 620 }}>
+            {copy.description}
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 14,
+              marginTop: 22,
+            }}
+          >
+            {copy.pricing.map((tier) => (
+              <div
+                key={tier.title}
+                style={{
+                  borderRadius: 20,
+                  border:
+                    tier.title === "Pro" ? "1px solid rgba(134,239,172,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                  background: tier.title === "Pro" ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
+                  padding: "18px 16px",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    color: tier.title === "Pro" ? "#86efac" : "#9ca3af",
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {tier.title}
+                </p>
+                <p style={{ margin: "10px 0 0 0", fontSize: 20, fontWeight: 700 }}>{tier.price}</p>
+                <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+                  {tier.bullets.map((bullet) => (
+                    <p key={bullet} style={{ margin: 0, color: "#c7cbd4", fontSize: 14, lineHeight: 1.5 }}>
+                      {bullet}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+              borderRadius: 20,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.02)",
+              padding: "16px 18px",
+            }}
+          >
+            <p style={{ margin: 0, color: "#ffffff", fontSize: 14, fontWeight: 600 }}>{copy.ecosystemTitle}</p>
+            <p style={{ margin: "8px 0 0 0", color: "#b6bcc8", fontSize: 14, lineHeight: 1.65 }}>
+              {copy.ecosystemBody}
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gap: 12, marginTop: 22 }}>
             <div
-              key={tier.title}
               style={{
-                borderRadius: 20,
-                border: tier.title === "Pro" ? "1px solid rgba(134,239,172,0.35)" : "1px solid rgba(255,255,255,0.08)",
-                background: tier.title === "Pro" ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.03)",
-                padding: "18px 16px",
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
               }}
             >
-              <p style={{ margin: 0, color: tier.title === "Pro" ? "#86efac" : "#9ca3af", fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase" }}>
-                {tier.title}
-              </p>
-              <p style={{ margin: "10px 0 0 0", fontSize: 20, fontWeight: 700 }}>{tier.price}</p>
-              <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                {tier.bullets.map((bullet) => (
-                  <p key={bullet} style={{ margin: 0, color: "#c7cbd4", fontSize: 14, lineHeight: 1.5 }}>
-                    {bullet}
-                  </p>
-                ))}
-              </div>
+              <Link
+                href="/upload"
+                onClick={onClose}
+                style={{
+                  textDecoration: "none",
+                  color: "#050505",
+                  background: "#f3f4f6",
+                  padding: "12px 16px",
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  flex: "1 1 220px",
+                  textAlign: "center",
+                }}
+              >
+                {copy.openDashboard}
+              </Link>
+              <Link
+                href="https://www.biosphere.rocks/services"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textDecoration: "none",
+                  color: "#f3f4f6",
+                  padding: "12px 16px",
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.02)",
+                  flex: "1 1 220px",
+                  textAlign: "center",
+                }}
+              >
+                {copy.exploreServices}
+              </Link>
             </div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            borderRadius: 20,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            padding: "16px 18px",
-          }}
-        >
-          <p style={{ margin: 0, color: "#ffffff", fontSize: 14, fontWeight: 600 }}>
-            {copy.ecosystemTitle}
-          </p>
-          <p style={{ margin: "8px 0 0 0", color: "#b6bcc8", fontSize: 14, lineHeight: 1.65 }}>
-            {copy.ecosystemBody}
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 22 }}>
-          <Link
-            href="/dashboard"
-            onClick={onClose}
-            style={{
-              textDecoration: "none",
-              color: "#050505",
-              background: "#f3f4f6",
-              padding: "12px 16px",
-              borderRadius: 999,
-              fontWeight: 800,
-              fontSize: 14,
-            }}
-          >
-            {copy.openDashboard}
-          </Link>
-          <Link
-            href="https://www.biosphere.rocks/services"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              textDecoration: "none",
-              color: "#f3f4f6",
-              padding: "12px 16px",
-              borderRadius: 999,
-              fontWeight: 700,
-              fontSize: 14,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(255,255,255,0.02)",
-            }}
-          >
-            {copy.exploreServices}
-          </Link>
+          </div>
         </div>
       </div>
     </div>

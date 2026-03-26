@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type {
@@ -11,6 +10,7 @@ import type {
   ProofResponse,
   VerifyResponse,
 } from "@/app/types/records";
+import Navbar, { type NavbarLang } from "@/app/components/Navbar";
 import UploadDropzone from "@/app/components/UploadDropzone";
 import MappingWizard from "@/app/components/MappingWizard";
 import PreviewTable from "@/app/components/PreviewTable";
@@ -51,6 +51,45 @@ type JsonRecordInput = {
   notes?: string;
   record_id?: string;
 };
+
+const uploadCopy = {
+  en: {
+    sidebarGuide: "Explore your proof details",
+    startLine: "Start by uploading your data to generate your first proof.",
+    uploadStepExcel: "Step 2 — Upload your data",
+    uploadStepJson: "Step 2 — Add your JSON data",
+    datasetLabel: "Dataset",
+    datasetHelpExcel: "Upload the spreadsheet that will become the basis of your proof.",
+    datasetHelpJson: "Paste a JSON array of records or an object containing a records array.",
+    optionalEvidenceLabel: "Optional photo evidence",
+    optionalEvidenceHelp: "Add visual support only if your record needs it. This step is optional.",
+    nextStepLine: "Next step: verify your proof or share it.",
+  },
+  fr: {
+    sidebarGuide: "Explorez les détails de votre preuve",
+    startLine: "Commencez par importer vos données pour générer votre première preuve.",
+    uploadStepExcel: "Step 2 — Importer vos données",
+    uploadStepJson: "Step 2 — Ajouter vos données JSON",
+    datasetLabel: "Jeu de données",
+    datasetHelpExcel: "Importez la feuille de calcul qui servira de base à votre preuve.",
+    datasetHelpJson: "Collez un tableau JSON de records ou un objet contenant un tableau records.",
+    optionalEvidenceLabel: "Preuve photo facultative",
+    optionalEvidenceHelp: "Ajoutez un support visuel uniquement si votre enregistrement en a besoin. Cette étape reste facultative.",
+    nextStepLine: "Étape suivante : vérifiez votre preuve ou partagez-la.",
+  },
+  es: {
+    sidebarGuide: "Explora los detalles de tu prueba",
+    startLine: "Comienza cargando tus datos para generar tu primera prueba.",
+    uploadStepExcel: "Step 2 — Cargar tus datos",
+    uploadStepJson: "Step 2 — Agregar tus datos JSON",
+    datasetLabel: "Conjunto de datos",
+    datasetHelpExcel: "Carga la hoja de cálculo que servirá como base de tu proof.",
+    datasetHelpJson: "Pega un arreglo JSON de records o un objeto que contenga un arreglo records.",
+    optionalEvidenceLabel: "Evidencia fotográfica opcional",
+    optionalEvidenceHelp: "Agrega soporte visual solo si tu registro lo necesita. Este paso sigue siendo opcional.",
+    nextStepLine: "Paso siguiente: verifica tu prueba o compártela.",
+  },
+} satisfies Record<NavbarLang, Record<string, string>>;
 
 function parseDashboardTab(value: string | null): DashboardTab | null {
   if (
@@ -108,6 +147,17 @@ function UploadTabSync({ onTabChange }: { onTabChange: (tab: DashboardTab) => vo
 
 export default function UploadPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("create");
+  const [lang, setLang] = useState<NavbarLang>(() => {
+    if (typeof window === "undefined") {
+      return "en";
+    }
+    try {
+      const saved = window.localStorage.getItem("lang");
+      return saved === "en" || saved === "fr" || saved === "es" ? saved : "en";
+    } catch {
+      return "en";
+    }
+  });
 
   const [inputMode, setInputMode] = useState<InputMode>("excel");
   const [projectName, setProjectName] = useState("");
@@ -572,37 +622,40 @@ export default function UploadPage() {
   const activeTabTitle = tabs.find((tab) => tab.key === activeTab)?.label ?? "Dashboard";
 
   const evidenceUrl = resolveEvidenceUrl(proof?.evidence?.photo_uri);
+  const uiCopy = uploadCopy[lang];
+
+  const changeLang = (nextLang: NavbarLang) => {
+    setLang(nextLang);
+    try {
+      window.localStorage.setItem("lang", nextLang);
+    } catch {}
+  };
 
   return (
     <main className="relative min-h-screen bg-black text-white">
       <Suspense fallback={null}>
         <UploadTabSync onTabChange={setActiveTab} />
       </Suspense>
-      <div className="pointer-events-none absolute left-6 top-4 z-40 opacity-80">
-        <Image
-          src="/biosphere.jpg"
-          alt="Biosphere"
-          width={30}
-          height={30}
-          className="h-8 w-auto object-contain opacity-75 transition hover:opacity-100"
+      <div className="mx-auto grid w-full max-w-[1440px] gap-5 px-4 py-5 lg:px-6 lg:py-6">
+        <Navbar
+          lang={lang}
+          onChangeLang={changeLang}
+          title="Proof of Records"
+          subtitle="Verifiable data infrastructure"
+          homeLabel="Home"
+          biosphereLabel="Biosphere Rocks"
+          proofRecordsLabel="Proof Records"
+          launchLabel="Launch App"
         />
       </div>
-      <div className="pointer-events-none absolute right-6 top-4 z-40 opacity-80">
-        <Image
-          src="/iota.png"
-          alt="IOTA"
-          width={30}
-          height={30}
-          className="h-8 w-auto object-contain opacity-75 transition hover:opacity-100"
-        />
-      </div>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 pb-5 lg:flex-row lg:gap-8 lg:px-6 lg:pb-6">
         <aside className="w-full rounded-2xl border border-gray-800 bg-[#0c0c0c] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.45)] lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[280px] lg:flex-shrink-0 lg:p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">Proof of Records</h1>
           <p className="mt-2 text-sm text-gray-400">
             Operational traceability in 3 steps with optional advanced technical review.
           </p>
 
+          <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gray-500">{uiCopy.sidebarGuide}</p>
           <nav className="mt-4">
             <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
               {tabs.map((tab) => {
@@ -635,14 +688,21 @@ export default function UploadPage() {
             <h2 className="text-2xl font-bold tracking-wide text-white">{activeTabTitle}</h2>
           </header>
 
+          {activeTab === "create" ? (
+            <p className="mb-4 text-sm text-gray-400">{uiCopy.startLine}</p>
+          ) : null}
+
           {errorMessage ? <p style={{ marginTop: 12, color: "crimson" }}>{errorMessage}</p> : null}
           {proof ? (
-            <ProofInterpretationCard
-              proof={proof}
-              onViewTechnicalDetails={() => setActiveTab("technical")}
-              onVerifyProof={() => setActiveTab("verify")}
-              onDownloadSummary={() => void onDownloadProofSummary()}
-            />
+            <>
+              <ProofInterpretationCard
+                proof={proof}
+                onViewTechnicalDetails={() => setActiveTab("technical")}
+                onVerifyProof={() => setActiveTab("verify")}
+                onDownloadSummary={() => void onDownloadProofSummary()}
+              />
+              <p className="mb-4 mt-3 text-sm text-gray-400">{uiCopy.nextStepLine}</p>
+            </>
           ) : null}
 
           {activeTab === "create" ? (
@@ -927,26 +987,37 @@ export default function UploadPage() {
                   }}
                 >
                   <h2 style={{ fontSize: 18, fontWeight: 700 }}>
-                    {inputMode === "excel" ? "Step 2 — Upload Data and Evidence" : "Step 2 — Paste JSON and Add Evidence"}
+                    {inputMode === "excel" ? uiCopy.uploadStepExcel : uiCopy.uploadStepJson}
                   </h2>
-                  {inputMode === "excel" ? (
-                    <>
-                      <UploadDropzone onFileSelected={parseFile} />
-                      {file ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Dataset: {file.name}</p> : null}
-                      {parseLoading ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Parsing...</p> : null}
-                    </>
-                  ) : (
-                    <>
-                      <p style={{ marginTop: 10, color: "#d1d5db" }}>
-                        Use a JSON array of records or an object with a <code>records</code> array.
-                      </p>
+                  <div
+                    style={{
+                      marginTop: 12,
+                      border: "1px solid #3a3a3a",
+                      borderRadius: 10,
+                      background: "#0b0b0b",
+                      padding: 12,
+                    }}
+                  >
+                    <p style={{ margin: 0, fontWeight: 700, color: "#ffffff" }}>{uiCopy.datasetLabel}</p>
+                    <p style={{ margin: "6px 0 0 0", color: "#9ca3af", fontSize: 14 }}>
+                      {inputMode === "excel" ? uiCopy.datasetHelpExcel : uiCopy.datasetHelpJson}
+                    </p>
+                    {inputMode === "excel" ? (
+                      <>
+                        <div style={{ marginTop: 10 }}>
+                          <UploadDropzone onFileSelected={parseFile} />
+                        </div>
+                        {file ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Dataset: {file.name}</p> : null}
+                        {parseLoading ? <p style={{ marginTop: 10, color: "#d1d5db" }}>Parsing...</p> : null}
+                      </>
+                    ) : (
                       <textarea
                         value={jsonInput}
                         onChange={(event) => setJsonInput(event.target.value)}
                         rows={12}
                         style={{
                           width: "100%",
-                          marginTop: 8,
+                          marginTop: 10,
                           borderRadius: 10,
                           border: "1px solid #3a3a3a",
                           padding: "10px 12px",
@@ -955,19 +1026,31 @@ export default function UploadPage() {
                           color: "#fff",
                         }}
                       />
-                    </>
-                  )}
+                    )}
+                  </div>
 
-                  <label style={{ display: "block", marginTop: 12 }}>
-                    <span style={{ fontWeight: 600 }}>Upload Photo Evidence (optional)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
-                    style={{ display: "block", marginTop: 6 }}
-                  />
-                </label>
-                {photo ? <p style={{ marginTop: 6, color: "#d1d5db" }}>Photo: {photo.name}</p> : null}
+                  <div
+                    style={{
+                      marginTop: 12,
+                      border: "1px solid #2f2f2f",
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,0.02)",
+                      padding: 12,
+                    }}
+                  >
+                    <p style={{ margin: 0, fontWeight: 700, color: "#ffffff" }}>{uiCopy.optionalEvidenceLabel}</p>
+                    <p style={{ margin: "6px 0 0 0", color: "#9ca3af", fontSize: 14 }}>{uiCopy.optionalEvidenceHelp}</p>
+                    <label style={{ display: "block", marginTop: 10 }}>
+                      <span style={{ fontWeight: 600 }}>Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
+                        style={{ display: "block", marginTop: 6 }}
+                      />
+                    </label>
+                    {photo ? <p style={{ marginTop: 6, color: "#d1d5db" }}>Photo: {photo.name}</p> : null}
+                  </div>
               </section>
 
               {inputMode === "excel" && parse ? (

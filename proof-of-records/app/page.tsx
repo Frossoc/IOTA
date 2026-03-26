@@ -3,15 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Navbar from "@/app/components/Navbar";
 
 type Lang = "en" | "fr" | "es";
 
 const translations = {
   en: {
     heroTitle: "Proof of Records",
-    heroTagline: "Verifiable structured data anchored on IOTA",
+    heroTagline: "Turn operational data into verifiable records anchored on IOTA",
     heroDescription:
-      "Transform spreadsheets and operational records into publicly verifiable proofs without adding blockchain complexity to your workflow.",
+      "From spreadsheets and JSON to independently verifiable proof, built for traceability, auditability, and trust.",
+    heroDifferentiator: "Most systems certify files. Proof of Records certifies the underlying data.",
     ctaPrimary: "Launch App",
     ctaSecondary: "View Demo",
     problemTitle: "The Problem",
@@ -32,9 +34,12 @@ const translations = {
     trustTitle: "Built for high-integrity records, not blockchain theater.",
     trustText:
       "Built with Biosphere infrastructure, anchored on IOTA testnet, and designed for verifiable operational data that needs to be checked by organizations, partners, and the public.",
+    notarizationTitle: "More than document notarization",
+    notarizationText:
+      "Proof of Records is not limited to one file type or one workflow. It provides a reusable trust layer for operational data across reporting, compliance, supply chains, impact, and beyond.",
     aboutBiosphereTitle: "About Biosphere Rocks",
     aboutBiosphereText:
-      "Proof of Records is part of the Biosphere Rocks infrastructure. Biosphere Rocks is building a new trust layer for real-world data. Instead of relying on platforms or reports, it enables data, actions, and evidence to become verifiable, traceable, and auditable by design. Proof of Records is the first step: it turns files and structured data into deterministic proofs that anyone can verify independently and without trust assumptions.",
+      "Proof of Records is one operational layer of the broader Biosphere Rocks infrastructure, a system designed to make real-world data verifiable, traceable, and auditable.",
     aboutBiosphereLink: "Explore Biosphere Rocks",
     finalTitle: "Bring verifiable records into the workflow you already use.",
     finalPrimary: "Open Dashboard",
@@ -43,6 +48,8 @@ const translations = {
     biosphereFooter: "Built as part of the Biosphere Rocks infrastructure",
     navProofs: "Proof Records",
     navLaunch: "Launch App",
+    navHome: "Home",
+    navBiosphere: "Biosphere Rocks",
     heroBadge: "Deeptech integrity layer",
     proofStatsInput: "Input",
     proofStatsAnchor: "Anchor",
@@ -58,9 +65,11 @@ const translations = {
   },
   fr: {
     heroTitle: "Proof of Records",
-    heroTagline: "Donnees verifiables ancrees sur IOTA",
+    heroTagline: "Transformez les donnees operationnelles en enregistrements verifiables ancres sur IOTA",
     heroDescription:
-      "Transformez des feuilles de calcul et des donnees operationnelles en preuves verifiables publiquement sans complexite blockchain.",
+      "Des feuilles de calcul et du JSON vers une preuve verifiable independamment, concue pour la tracabilite, l'auditabilite et la confiance.",
+    heroDifferentiator:
+      "La plupart des systemes certifient des fichiers. Proof of Records certifie les donnees sous-jacentes.",
     ctaPrimary: "Ouvrir l'application",
     ctaSecondary: "Voir la demo",
     problemTitle: "Le probleme",
@@ -81,9 +90,12 @@ const translations = {
     trustTitle: "Concu pour des enregistrements a haute integrite.",
     trustText:
       "Construit avec l'infrastructure Biosphere, ancre sur IOTA testnet, et pense pour des donnees operationnelles verifiables par des organisations, partenaires et publics.",
+    notarizationTitle: "Plus que de la notarisation documentaire",
+    notarizationText:
+      "Proof of Records ne se limite ni a un type de fichier ni a un workflow unique. Il fournit une couche de confiance reutilisable pour les donnees operationnelles a travers le reporting, la conformite, la supply chain, l'impact et au-dela.",
     aboutBiosphereTitle: "A propos de Biosphere Rocks",
     aboutBiosphereText:
-      "Proof of Records fait partie de l'infrastructure Biosphere Rocks. Biosphere Rocks construit une nouvelle couche de confiance pour les donnees du monde reel. Au lieu de s'appuyer sur des plateformes ou des rapports, cette infrastructure permet aux donnees, aux actions et aux preuves de devenir verifiables, tracables et auditables par conception. Proof of Records est la premiere etape : il transforme les fichiers et les donnees structurees en preuves deterministes que chacun peut verifier de maniere independante et sans hypothese de confiance.",
+      "Proof of Records est une couche operationnelle de l'infrastructure plus large Biosphere Rocks, un systeme concu pour rendre les donnees du monde reel verifiables, tracables et auditables.",
     aboutBiosphereLink: "Découvrir Biosphere Rocks",
     finalTitle: "Integrez des preuves verifiables dans les flux que vous utilisez deja.",
     finalPrimary: "Ouvrir le dashboard",
@@ -92,6 +104,8 @@ const translations = {
     biosphereFooter: "Construit dans l'infrastructure Biosphere Rocks",
     navProofs: "Registre des preuves",
     navLaunch: "Ouvrir l'application",
+    navHome: "Accueil",
+    navBiosphere: "Biosphere Rocks",
     heroBadge: "Couche d'integrite deeptech",
     proofStatsInput: "Entree",
     proofStatsAnchor: "Ancrage",
@@ -107,9 +121,11 @@ const translations = {
   },
   es: {
     heroTitle: "Proof of Records",
-    heroTagline: "Datos verificables anclados en IOTA",
+    heroTagline: "Convierte datos operativos en registros verificables anclados en IOTA",
     heroDescription:
-      "Convierte hojas de calculo y datos operativos en pruebas verificables publicamente sin complejidad blockchain.",
+      "De hojas de calculo y JSON a proof verificable de forma independiente, creada para trazabilidad, auditabilidad y confianza.",
+    heroDifferentiator:
+      "La mayoria de los sistemas certifican archivos. Proof of Records certifica los datos subyacentes.",
     ctaPrimary: "Abrir aplicacion",
     ctaSecondary: "Ver demo",
     problemTitle: "El problema",
@@ -130,9 +146,12 @@ const translations = {
     trustTitle: "Disenado para registros de alta integridad.",
     trustText:
       "Construido con infraestructura Biosphere, anclado en IOTA testnet, y disenado para datos operativos verificables por organizaciones, aliados y publico.",
+    notarizationTitle: "Mas que notarizacion documental",
+    notarizationText:
+      "Proof of Records no se limita a un tipo de archivo ni a un solo flujo de trabajo. Proporciona una capa de confianza reutilizable para datos operativos en reporting, cumplimiento, supply chain, impacto y mas alla.",
     aboutBiosphereTitle: "Sobre Biosphere Rocks",
     aboutBiosphereText:
-      "Proof of Records forma parte de la infraestructura Biosphere Rocks. Biosphere Rocks esta construyendo una nueva capa de confianza para los datos del mundo real. En lugar de depender de plataformas o reportes, permite que los datos, las acciones y la evidencia sean verificables, trazables y auditables por diseno. Proof of Records es el primer paso: convierte archivos y datos estructurados en pruebas deterministas que cualquiera puede verificar de forma independiente y sin supuestos de confianza.",
+      "Proof of Records es una capa operativa de la infraestructura mas amplia de Biosphere Rocks, un sistema disenado para hacer que los datos del mundo real sean verificables, trazables y auditables.",
     aboutBiosphereLink: "Explorar Biosphere Rocks",
     finalTitle: "Lleva registros verificables al flujo de trabajo que ya utilizas.",
     finalPrimary: "Abrir dashboard",
@@ -141,6 +160,8 @@ const translations = {
     biosphereFooter: "Construido como parte de la infraestructura Biosphere Rocks",
     navProofs: "Registros de proof",
     navLaunch: "Abrir aplicacion",
+    navHome: "Home",
+    navBiosphere: "Biosphere Rocks",
     heroBadge: "Capa deeptech de integridad",
     proofStatsInput: "Entrada",
     proofStatsAnchor: "Anclaje",
@@ -357,106 +378,16 @@ export default function Home() {
       }}
     >
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "28px 20px 96px 20px", position: "relative" }}>
-        <header
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-            paddingBottom: 28,
-            paddingTop: 12,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "#101010",
-              }}
-            >
-              <Image src="/biosphere.jpg" alt="Biosphere" width={42} height={42} style={{ objectFit: "cover" }} />
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, color: "#d1d5db", letterSpacing: 0.5 }}>{t.heroTitle}</p>
-              <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "#6b7280" }}>Verifiable data infrastructure</p>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: 12,
-              marginLeft: "auto",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                zIndex: 2,
-              }}
-            >
-              {(["en", "fr", "es"] as Lang[]).map((code) => {
-                const active = lang === code;
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => changeLang(code)}
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-                      color: active ? "#ffffff" : "#aeb4bf",
-                      borderRadius: 999,
-                      padding: "6px 10px",
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {code.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-
-            <nav style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <Link
-                href="/dashboard"
-                style={{
-                  textDecoration: "none",
-                  color: "#d1d5db",
-                  fontSize: 14,
-                  padding: "10px 14px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
-                {t.navProofs}
-              </Link>
-              <Link
-                href="/upload"
-                style={{
-                  textDecoration: "none",
-                  color: "#050505",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  padding: "10px 16px",
-                  borderRadius: 999,
-                  background: "#f3f4f6",
-                }}
-              >
-                {t.navLaunch}
-              </Link>
-            </nav>
-          </div>
-        </header>
+        <Navbar
+          lang={lang}
+          onChangeLang={changeLang}
+          title={t.heroTitle}
+          subtitle="Verifiable data infrastructure"
+          homeLabel={t.navHome}
+          biosphereLabel={t.navBiosphere}
+          proofRecordsLabel={t.navProofs}
+          launchLabel={t.navLaunch}
+        />
 
         <section
           style={{
@@ -517,6 +448,17 @@ export default function Home() {
               }}
             >
               {t.biosphereLine}
+            </p>
+            <p
+              style={{
+                margin: "16px 0 0 0",
+                color: "#f3f4f6",
+                fontSize: 15,
+                lineHeight: 1.6,
+                maxWidth: 640,
+              }}
+            >
+              {t.heroDifferentiator}
             </p>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 30 }}>
@@ -675,6 +617,10 @@ export default function Home() {
 
         <section style={{ padding: "0 0 80px 0" }}>
           {sectionTitle(t.solutionTitle, t.solutionTitle, t.solutionText)}
+        </section>
+
+        <section style={{ padding: "0 0 80px 0" }}>
+          {sectionTitle(t.notarizationTitle, t.notarizationTitle, t.notarizationText)}
         </section>
 
         <section style={{ padding: "0 0 84px 0" }}>

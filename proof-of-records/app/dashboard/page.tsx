@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/app/lib/supabase/server";
 import DashboardList, { type DashboardProofRow } from "./DashboardList";
+import DashboardShell from "./DashboardShell";
 
 export const runtime = "nodejs";
 
@@ -68,8 +69,7 @@ export default async function DashboardPage() {
   const { proofs, error } = await loadProofs();
 
   return (
-    <main style={{ minHeight: "100vh", background: "#050505", color: "#ffffff", padding: "32px 16px" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gap: 16 }}>
+    <DashboardShell>
         <section
           style={{
             border: "1px solid #1f2937",
@@ -100,7 +100,6 @@ export default async function DashboardPage() {
         ) : null}
 
         <DashboardList proofs={proofs} />
-      </div>
-    </main>
+    </DashboardShell>
   );
 }

@@ -386,6 +386,7 @@ export default function Home() {
           homeLabel={t.navHome}
           biosphereLabel={t.navBiosphere}
           proofRecordsLabel={t.navProofs}
+          dashboardLabel="Dashboard"
           launchLabel={t.navLaunch}
         />
 

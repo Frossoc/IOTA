@@ -55,6 +55,8 @@ type JsonRecordInput = {
 const uploadCopy = {
   en: {
     sidebarGuide: "Explore your proof details",
+    mainActionsLabel: "Main actions",
+    advancedLabel: "Advanced",
     startLine: "Start by uploading your data to generate your first proof.",
     uploadStepExcel: "Step 2 — Upload your data",
     uploadStepJson: "Step 2 — Add your JSON data",
@@ -67,6 +69,8 @@ const uploadCopy = {
   },
   fr: {
     sidebarGuide: "Explorez les détails de votre preuve",
+    mainActionsLabel: "Actions principales",
+    advancedLabel: "Avancé",
     startLine: "Commencez par importer vos données pour générer votre première preuve.",
     uploadStepExcel: "Step 2 — Importer vos données",
     uploadStepJson: "Step 2 — Ajouter vos données JSON",
@@ -79,6 +83,8 @@ const uploadCopy = {
   },
   es: {
     sidebarGuide: "Explora los detalles de tu prueba",
+    mainActionsLabel: "Acciones principales",
+    advancedLabel: "Avanzado",
     startLine: "Comienza cargando tus datos para generar tu primera prueba.",
     uploadStepExcel: "Step 2 — Cargar tus datos",
     uploadStepJson: "Step 2 — Agregar tus datos JSON",
@@ -620,6 +626,8 @@ export default function UploadPage() {
     { key: "integrations", label: "Integrations" },
   ];
   const activeTabTitle = tabs.find((tab) => tab.key === activeTab)?.label ?? "Dashboard";
+  const mainTabs = tabs.filter((tab) => tab.key === "create" || tab.key === "verify" || tab.key === "summary");
+  const advancedTabs = tabs.filter((tab) => tab.key === "technical" || tab.key === "integrations");
 
   const evidenceUrl = resolveEvidenceUrl(proof?.evidence?.photo_uri);
   const uiCopy = uploadCopy[lang];
@@ -645,6 +653,7 @@ export default function UploadPage() {
           homeLabel="Home"
           biosphereLabel="Biosphere Rocks"
           proofRecordsLabel="Proof Records"
+          dashboardLabel="Dashboard"
           launchLabel="Launch App"
         />
       </div>
@@ -657,24 +666,56 @@ export default function UploadPage() {
 
           <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gray-500">{uiCopy.sidebarGuide}</p>
           <nav className="mt-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`text-black whitespace-nowrap rounded-xl border px-3 py-2 text-left text-sm font-semibold transition lg:w-full ${
-                      isActive
-                        ? "border-gray-500 bg-gray-200 shadow-[inset_3px_0_0_0_#1f2937]"
-                        : "border-gray-700 bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                  {uiCopy.mainActionsLabel}
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+                  {mainTabs.map((tab) => {
+                    const isActive = activeTab === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`whitespace-nowrap rounded-xl border px-3 py-2 text-left text-sm font-semibold transition lg:w-full ${
+                          isActive
+                            ? "border-emerald-500/60 bg-emerald-950 text-emerald-100 shadow-[inset_3px_0_0_0_#10b981]"
+                            : "border-emerald-900/40 bg-emerald-50 text-black hover:bg-emerald-100"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                  {uiCopy.advancedLabel}
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+                  {advancedTabs.map((tab) => {
+                    const isActive = activeTab === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`whitespace-nowrap rounded-xl border px-3 py-2 text-left text-sm font-semibold transition lg:w-full ${
+                          isActive
+                            ? "border-gray-500 bg-gray-200 text-black shadow-[inset_3px_0_0_0_#4b5563]"
+                            : "border-gray-700 bg-transparent text-gray-200 hover:border-gray-500 hover:bg-white/5"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </nav>
 

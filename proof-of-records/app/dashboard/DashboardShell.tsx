@@ -40,6 +40,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           homeLabel="Home"
           biosphereLabel="Biosphere Rocks"
           proofRecordsLabel="Proof Records"
+          dashboardLabel="Dashboard"
           launchLabel="Launch App"
         />
         {children}

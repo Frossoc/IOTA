@@ -16,7 +16,7 @@ const translations = {
       "Proof of Records turns structured data into verifiable, time-consistent records that can be trusted across organizations.",
     heroDifferentiator: "Most systems certify files. Proof of Records certifies the underlying data.",
     ctaPrimary: "Explore how data becomes verifiable",
-    ctaSecondary: "View Demo",
+    ctaSecondary: "Open Dashboard",
     problemTitle: "The Problem",
     problemText:
       "Spreadsheets, logs, and operational records can be edited, duplicated, or questioned after the fact. Organizations need integrity, traceability, and public verification.",
@@ -52,7 +52,7 @@ const translations = {
       "Proof of Records is one operational layer of the broader Biosphere Rocks infrastructure, a system designed to make real-world data verifiable, traceable, and auditable.",
     aboutBiosphereLink: "Explore Biosphere Rocks",
     finalTitle: "Bring verifiable records into the workflow you already use.",
-    finalPrimary: "Open Dashboard",
+    finalPrimary: "Open App",
     finalSecondary: "Explore Proof Records",
     biosphereLine: "Built for distributed ecosystems like IOTA.",
     hackathonLine: "Originated during the MasterZ × IOTA Hackathon",
@@ -83,7 +83,7 @@ const translations = {
     heroDifferentiator:
       "La plupart des systemes certifient des fichiers. Proof of Records certifie les donnees sous-jacentes.",
     ctaPrimary: "Explorer comment les données deviennent vérifiables",
-    ctaSecondary: "Voir la demo",
+    ctaSecondary: "Ouvrir le dashboard",
     problemTitle: "Le probleme",
     problemText:
       "Les feuilles de calcul, journaux et donnees operationnelles peuvent etre modifies, dupliques ou contestes apres coup. Les organisations ont besoin d'integrite, de tracabilite et de verification publique.",
@@ -119,7 +119,7 @@ const translations = {
       "Proof of Records est une couche operationnelle de l'infrastructure plus large Biosphere Rocks, un systeme concu pour rendre les donnees du monde reel verifiables, tracables et auditables.",
     aboutBiosphereLink: "Découvrir Biosphere Rocks",
     finalTitle: "Integrez des preuves verifiables dans les flux que vous utilisez deja.",
-    finalPrimary: "Ouvrir le dashboard",
+    finalPrimary: "Ouvrir l'application",
     finalSecondary: "Explorer les preuves",
     biosphereLine: "Conçu pour des écosystèmes distribués comme IOTA.",
     hackathonLine: "Conçu pendant le MasterZ × IOTA Hackathon",
@@ -150,7 +150,7 @@ const translations = {
     heroDifferentiator:
       "La mayoria de los sistemas certifican archivos. Proof of Records certifica los datos subyacentes.",
     ctaPrimary: "Explorar cómo los datos se vuelven verificables",
-    ctaSecondary: "Ver demo",
+    ctaSecondary: "Abrir dashboard",
     problemTitle: "El problema",
     problemText:
       "Las hojas de calculo, registros y datos operativos pueden ser modificados, duplicados o cuestionados despues del hecho. Las organizaciones necesitan integridad, trazabilidad y verificacion publica.",
@@ -186,7 +186,7 @@ const translations = {
       "Proof of Records es una capa operativa de la infraestructura mas amplia de Biosphere Rocks, un sistema disenado para hacer que los datos del mundo real sean verificables, trazables y auditables.",
     aboutBiosphereLink: "Explorar Biosphere Rocks",
     finalTitle: "Lleva registros verificables al flujo de trabajo que ya utilizas.",
-    finalPrimary: "Abrir dashboard",
+    finalPrimary: "Abrir aplicacion",
     finalSecondary: "Explorar proofs",
     biosphereLine: "Creado para ecosistemas distribuidos como IOTA.",
     hackathonLine: "Creado durante el MasterZ × IOTA Hackathon",

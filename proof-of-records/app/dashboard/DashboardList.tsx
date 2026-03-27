@@ -14,6 +14,8 @@ export type DashboardProofRow = {
   total_units: number;
   event_hash: string;
   created_at: string | null;
+  tx_digest: string | null;
+  object_id: string | null;
 };
 
 type DashboardListProps = {
@@ -36,6 +38,32 @@ function shortenHash(value: string): string {
     return value;
   }
   return `${value.slice(0, 10)}...${value.slice(-8)}`;
+}
+
+function getProofStatus(proof: DashboardProofRow): { label: string; style: CSSProperties } {
+  const isAnchored = Boolean(
+    (proof.tx_digest && proof.tx_digest.trim().length > 0) || (proof.object_id && proof.object_id.trim().length > 0)
+  );
+
+  if (isAnchored) {
+    return {
+      label: "Anchored",
+      style: {
+        border: "1px solid #14532d",
+        color: "#86efac",
+        background: "#052e16",
+      },
+    };
+  }
+
+  return {
+    label: "Local proof",
+    style: {
+      border: "1px solid #374151",
+      color: "#d1d5db",
+      background: "#111827",
+    },
+  };
 }
 
 export default function DashboardList({ proofs }: DashboardListProps) {
@@ -169,19 +197,22 @@ export default function DashboardList({ proofs }: DashboardListProps) {
                   </td>
                   <td style={tdStyle}>{formatDate(proof.created_at)}</td>
                   <td style={tdStyle}>
+                    {(() => {
+                      const status = getProofStatus(proof);
+                      return (
                     <span
                       style={{
-                        border: "1px solid #14532d",
                         borderRadius: 999,
-                        color: "#86efac",
-                        background: "#052e16",
                         padding: "2px 10px",
                         fontSize: 12,
                         fontWeight: 600,
+                        ...status.style,
                       }}
                     >
-                      Anchored
+                      {status.label}
                     </span>
+                      );
+                    })()}
                   </td>
                   <td style={tdStyle}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

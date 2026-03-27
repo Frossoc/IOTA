@@ -1164,14 +1164,25 @@ export default function UploadPage() {
                   }}
                 >
                   <h2 style={{ fontSize: 18, fontWeight: 700 }}>Step 3 — Proof Created</h2>
+                  {(() => {
+                    const isAnchored = Boolean(
+                      (proof.tx_digest && proof.tx_digest.trim().length > 0) ||
+                        (proof.object_id && proof.object_id !== null)
+                    );
+                    const integrityStatus = isAnchored ? "Anchored on IOTA" : "Local proof generated";
+                    return (
+                      <>
                   <p style={{ marginTop: 8 }}>
-                    Status: <strong>Proof generated</strong>
+                    Status: <strong>{integrityStatus}</strong>
                   </p>
                   <p>
                     Hash: <code>{proof.event_hash}</code>
                   </p>
                   <p>Timestamp: {proof.timestamp}</p>
-                  <p>Integrity Status: Verified</p>
+                  <p>Integrity Status: {integrityStatus}</p>
+                      </>
+                    );
+                  })()}
                 </section>
               ) : null}
             </>

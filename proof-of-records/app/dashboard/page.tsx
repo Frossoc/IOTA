@@ -35,6 +35,8 @@ function parseProofRow(value: unknown): DashboardProofRow | null {
     total_units: toNumber(row.total_units),
     event_hash: row.event_hash,
     created_at: typeof row.created_at === "string" ? row.created_at : null,
+    tx_digest: typeof row.tx_digest === "string" ? row.tx_digest : null,
+    object_id: typeof row.object_id === "string" ? row.object_id : null,
   };
 }
 
@@ -49,7 +51,7 @@ async function loadProofs(): Promise<{ proofs: DashboardProofRow[]; error: strin
 
   const { data, error } = await client
     .from("proof_of_records")
-    .select("id,project_name,process_type,rows_count,total_units,event_hash,created_at")
+    .select("id,project_name,process_type,rows_count,total_units,event_hash,created_at,tx_digest,object_id")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -84,7 +86,7 @@ export default async function DashboardPage() {
           <p style={{ color: "#93c5fd", fontSize: 12, letterSpacing: 0.7, margin: 0 }}>CLIENT DASHBOARD</p>
           <h1 style={{ margin: "8px 0 0 0", fontSize: 30 }}>Proof Records</h1>
           <p style={{ color: "#9ca3af", margin: "8px 0 0 0", fontSize: 14 }}>
-            Latest anchored proofs with quick access to public verification and bundle export.
+            Latest proofs with quick access to public verification and bundle export.
           </p>
         </section>
 

@@ -15,12 +15,16 @@ type ProofInterpretationCardProps = {
 type CardCopy = {
   statusTitle: string;
   statusBody: string;
+  localStatusTitle: string;
+  localStatusBody: string;
   meaningTitle: string;
   meaningItems: Array<{ icon: string; title: string; description: string }>;
   processTitle: string;
   processLine: string;
+  localProcessLine: string;
   insightTitle: string;
   insightBody: string;
+  localInsightBody: string;
   nextStep: string;
   verifyAction: string;
   technicalAction: string;
@@ -33,6 +37,8 @@ const copy: Record<Lang, CardCopy> = {
   en: {
     statusTitle: "Your record is now verifiable",
     statusBody: "It has been securely processed and can now be independently checked.",
+    localStatusTitle: "Your proof is ready",
+    localStatusBody: "It has been securely processed and is ready for local review or later anchoring.",
     meaningTitle: "What this means",
     meaningItems: [
       {
@@ -53,9 +59,12 @@ const copy: Record<Lang, CardCopy> = {
     ],
     processTitle: "Process",
     processLine: "Data → Hash → Anchor → Verifiable",
+    localProcessLine: "Data → Hash → Proof → Ready to verify",
     insightTitle: "StrategIA insight",
     insightBody:
       "Your record is now independently verifiable and can be used as a trusted reference.",
+    localInsightBody:
+      "Your proof is ready for review and can still be verified locally or anchored later when on-chain credentials are available.",
     nextStep: "Next step: Verify your proof or share it externally.",
     verifyAction: "Verify this proof",
     technicalAction: "View technical details",
@@ -66,6 +75,8 @@ const copy: Record<Lang, CardCopy> = {
   fr: {
     statusTitle: "Votre enregistrement est maintenant vérifiable",
     statusBody: "Il a été traité de manière sécurisée et peut désormais être contrôlé indépendamment.",
+    localStatusTitle: "Votre preuve est prête",
+    localStatusBody: "Elle a été traitée de manière sécurisée et peut être relue localement ou ancrée plus tard.",
     meaningTitle: "Ce que cela signifie",
     meaningItems: [
       {
@@ -86,9 +97,12 @@ const copy: Record<Lang, CardCopy> = {
     ],
     processTitle: "Processus",
     processLine: "Data → Hash → Anchor → Verifiable",
+    localProcessLine: "Data → Hash → Proof → Ready to verify",
     insightTitle: "StrategIA insight",
     insightBody:
       "Votre enregistrement est désormais vérifiable indépendamment et peut servir de référence fiable.",
+    localInsightBody:
+      "Votre preuve est prête pour relecture et peut encore être vérifiée localement ou ancrée plus tard lorsque les identifiants on-chain sont disponibles.",
     nextStep: "Étape suivante : Verify votre proof ou partagez-la à l’externe.",
     verifyAction: "Verify this proof",
     technicalAction: "View Technical",
@@ -99,6 +113,8 @@ const copy: Record<Lang, CardCopy> = {
   es: {
     statusTitle: "Tu registro ya es verificable",
     statusBody: "Se ha procesado de forma segura y ahora puede comprobarse de manera independiente.",
+    localStatusTitle: "Tu proof está lista",
+    localStatusBody: "Se ha procesado de forma segura y está lista para revisión local o anclaje posterior.",
     meaningTitle: "Qué significa esto",
     meaningItems: [
       {
@@ -119,9 +135,12 @@ const copy: Record<Lang, CardCopy> = {
     ],
     processTitle: "Proceso",
     processLine: "Data → Hash → Anchor → Verifiable",
+    localProcessLine: "Data → Hash → Proof → Ready to verify",
     insightTitle: "StrategIA insight",
     insightBody:
       "Tu registro ya es verificable de forma independiente y puede usarse como referencia confiable.",
+    localInsightBody:
+      "Tu proof está lista para revisión y todavía puede verificarse localmente o anclarse después cuando haya credenciales on-chain disponibles.",
     nextStep: "Siguiente paso: Verify tu proof o compártela externamente.",
     verifyAction: "Verify this proof",
     technicalAction: "View Technical",
@@ -146,6 +165,9 @@ export default function ProofInterpretationCard({
   });
 
   const t = useMemo(() => copy[lang], [lang]);
+  const isAnchored = Boolean(
+    (proof.tx_digest && proof.tx_digest.trim().length > 0) || (proof.object_id && proof.object_id !== null)
+  );
 
   return (
     <section
@@ -167,8 +189,12 @@ export default function ProofInterpretationCard({
         }}
       >
         <div>
-          <p style={{ margin: 0, color: "#86efac", fontSize: 13, fontWeight: 700 }}>✔ {t.statusTitle}</p>
-          <p style={{ margin: "6px 0 0 0", color: "#d1d5db", fontSize: 14, lineHeight: 1.55 }}>{t.statusBody}</p>
+          <p style={{ margin: 0, color: "#86efac", fontSize: 13, fontWeight: 700 }}>
+            ✔ {isAnchored ? t.statusTitle : t.localStatusTitle}
+          </p>
+          <p style={{ margin: "6px 0 0 0", color: "#d1d5db", fontSize: 14, lineHeight: 1.55 }}>
+            {isAnchored ? t.statusBody : t.localStatusBody}
+          </p>
         </div>
         <div style={{ color: "#6b7280", fontSize: 12 }}>
           {proof.proof_db_id ? `${t.proofRef} ${proof.proof_db_id}` : `${proof.rows_count} ${t.records}`}
@@ -219,7 +245,9 @@ export default function ProofInterpretationCard({
         <p style={{ margin: 0, color: "#9ca3af", fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>
           {t.processTitle}
         </p>
-        <p style={{ margin: "8px 0 0 0", color: "#f8fafc", fontSize: 14, fontWeight: 600 }}>{t.processLine}</p>
+        <p style={{ margin: "8px 0 0 0", color: "#f8fafc", fontSize: 14, fontWeight: 600 }}>
+          {isAnchored ? t.processLine : t.localProcessLine}
+        </p>
       </div>
 
       <div
@@ -234,7 +262,9 @@ export default function ProofInterpretationCard({
         <p style={{ margin: 0, color: "#86efac", fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>
           {t.insightTitle}
         </p>
-        <p style={{ margin: "8px 0 0 0", color: "#d1d5db", fontSize: 14, lineHeight: 1.55 }}>{t.insightBody}</p>
+        <p style={{ margin: "8px 0 0 0", color: "#d1d5db", fontSize: 14, lineHeight: 1.55 }}>
+          {isAnchored ? t.insightBody : t.localInsightBody}
+        </p>
         <p style={{ margin: "8px 0 0 0", color: "#9ca3af", fontSize: 13 }}>{t.nextStep}</p>
       </div>
 

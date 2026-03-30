@@ -133,6 +133,41 @@ async function buildPdfBytes(payload: ProofSummaryPayload): Promise<Uint8Array> 
     y -= 8;
   };
 
+  const drawLinkSection = (title: string, items: Array<{ label: string; value: string }>) => {
+    page.drawText(title, {
+      x: left,
+      y,
+      size: 13,
+      font: fontBold,
+      color: rgb(0, 0, 0),
+    });
+    y -= 18;
+
+    for (const item of items) {
+      page.drawText(`${item.label}:`, {
+        x: left,
+        y,
+        size: 10.5,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
+      y -= 14;
+
+      page.drawText(item.value, {
+        x: left,
+        y,
+        size: 10.5,
+        font: fontRegular,
+        color: rgb(0, 0, 0),
+        maxWidth: 500,
+        lineHeight: 12,
+      });
+      y -= 24;
+    }
+
+    y -= 4;
+  };
+
   drawTitle("Proof of Records — Integrity Report");
 
   drawSection("Project", [
@@ -163,9 +198,9 @@ async function buildPdfBytes(payload: ProofSummaryPayload): Promise<Uint8Array> 
     ]);
   }
 
-  drawSection("Verification Links", [
-    `Transaction: ${payload.explorer?.tx ?? "N/A"}`,
-    `Proof Object: ${payload.explorer?.object ?? "N/A"}`,
+  drawLinkSection("Verification Links", [
+    { label: "Transaction", value: payload.explorer?.tx ?? "N/A" },
+    { label: "Proof Object", value: payload.explorer?.object ?? "N/A" },
   ]);
 
   page.drawText("Powered by Biosphere Integrity Infrastructure", {

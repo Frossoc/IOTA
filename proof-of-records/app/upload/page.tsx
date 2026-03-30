@@ -1420,6 +1420,72 @@ export default function UploadPage() {
                         "Not available"
                       )}
                     </p>
+                    {proof.explorer?.tx ?? txExplorer ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
+                        <a
+                          href={proof.explorer?.tx ?? txExplorer ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "8px 12px",
+                            borderRadius: 10,
+                            border: "1px solid rgba(74, 222, 128, 0.35)",
+                            background: "rgba(74, 222, 128, 0.12)",
+                            color: "#d1fae5",
+                            fontWeight: 600,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Open Transaction
+                        </a>
+                        {proof.explorer?.object ? (
+                          <a
+                            href={proof.explorer.object}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "8px 12px",
+                              borderRadius: 10,
+                              border: "1px solid rgba(74, 222, 128, 0.35)",
+                              background: "rgba(74, 222, 128, 0.12)",
+                              color: "#d1fae5",
+                              fontWeight: 600,
+                              textDecoration: "none",
+                            }}
+                          >
+                            Open Proof Object
+                          </a>
+                        ) : null}
+                      </div>
+                    ) : proof.explorer?.object ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
+                        <a
+                          href={proof.explorer.object}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "8px 12px",
+                            borderRadius: 10,
+                            border: "1px solid rgba(74, 222, 128, 0.35)",
+                            background: "rgba(74, 222, 128, 0.12)",
+                            color: "#d1fae5",
+                            fontWeight: 600,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Open Proof Object
+                        </a>
+                      </div>
+                    ) : null}
                   </div>
 
                   <section style={{ marginTop: 12, border: "1px solid #2f2f2f", borderRadius: 10, padding: 10 }}>

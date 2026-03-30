@@ -1330,6 +1330,26 @@ export default function UploadPage() {
                   <p>
                     <strong>match_onchain:</strong> {String(verifyResult.match_onchain)}
                   </p>
+                  <p>
+                    <strong>Transaction:</strong>{" "}
+                    {verifyResult.explorer?.tx ? (
+                      <a href={verifyResult.explorer.tx} target="_blank" rel="noopener noreferrer">
+                        {verifyResult.explorer.tx}
+                      </a>
+                    ) : (
+                      "Not available"
+                    )}
+                  </p>
+                  <p>
+                    <strong>Proof Object:</strong>{" "}
+                    {verifyResult.explorer?.object ? (
+                      <a href={verifyResult.explorer.object} target="_blank" rel="noopener noreferrer">
+                        {verifyResult.explorer.object}
+                      </a>
+                    ) : (
+                      "Not available"
+                    )}
+                  </p>
                 </div>
               ) : null}
             </section>
@@ -1381,10 +1401,24 @@ export default function UploadPage() {
                       ) : null}
                     </p>
                     <p>
-                      <strong>Explorer (tx):</strong> {proof.explorer?.tx ?? txExplorer ?? "(none)"}
+                      <strong>Transaction:</strong>{" "}
+                      {proof.explorer?.tx ?? txExplorer ? (
+                        <a href={proof.explorer?.tx ?? txExplorer ?? "#"} target="_blank" rel="noopener noreferrer">
+                          {proof.explorer?.tx ?? txExplorer}
+                        </a>
+                      ) : (
+                        "Not available"
+                      )}
                     </p>
                     <p>
-                      <strong>Explorer (object):</strong> {proof.explorer?.object ?? "(none)"}
+                      <strong>Proof Object:</strong>{" "}
+                      {proof.explorer?.object ? (
+                        <a href={proof.explorer.object} target="_blank" rel="noopener noreferrer">
+                          {proof.explorer.object}
+                        </a>
+                      ) : (
+                        "Not available"
+                      )}
                     </p>
                   </div>
 

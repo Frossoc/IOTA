@@ -151,7 +151,7 @@ async function buildPdfBytes(payload: ProofSummaryPayload): Promise<Uint8Array> 
     `Event hash: ${payload.event_hash ?? "N/A"}`,
     `IPFS URI: ${payload.uri ?? "N/A"}`,
     `Tx digest: ${payload.tx_digest ?? "N/A"}`,
-    `Proof ID: ${payload.object_id ?? "N/A"}`,
+    `Object ID: ${payload.object_id ?? "N/A"}`,
     `Issuer: ${payload.issuer ?? "N/A"}`,
   ]);
 
@@ -164,8 +164,8 @@ async function buildPdfBytes(payload: ProofSummaryPayload): Promise<Uint8Array> 
   }
 
   drawSection("Verification Links", [
-    `Explorer tx: ${payload.explorer?.tx ?? "N/A"}`,
-    `Explorer object: ${payload.explorer?.object ?? "N/A"}`,
+    `Transaction: ${payload.explorer?.tx ?? "N/A"}`,
+    `Proof Object: ${payload.explorer?.object ?? "N/A"}`,
   ]);
 
   page.drawText("Powered by Biosphere Integrity Infrastructure", {
